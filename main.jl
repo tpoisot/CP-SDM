@@ -12,7 +12,7 @@ presencelayer = mask(first(L), Occurrences(records))
 background = pseudoabsencemask(DistanceToEvent, presencelayer)
 bgpoints = backgroundpoints(nodata(background, d -> d < 10), 2sum(presencelayer))
 
-f = Figure()
+f = Figure(; size=(400, 590))
 ax = Axis(f[1,1]; aspect=DataAspect())
 for p in polygons
     poly!(ax, p, color=:grey90)
@@ -20,6 +20,8 @@ for p in polygons
 end
 scatter!(ax, presencelayer, color=:white, strokecolor=:forestgreen, strokewidth=2)
 scatter!(ax, bgpoints, color=:grey30, markersize=4)
+hidespines!(ax)
+hidedecorations!(ax)
 current_figure()
 
 # Set up the model
@@ -38,7 +40,7 @@ distrib = predict(sdm, L; threshold=true, consensus=majority)
 bsvaria = predict(sdm, L; threshold=false, consensus=iqr)
 prd = predict(sdm, L; threshold=false)
 
-f = Figure()
+f = Figure(; size=(400, 590))
 ax = Axis(f[1,1]; aspect=DataAspect())
 heatmap!(ax, prd, colormap=:tempo, colorrange=(0,1))
 for p in polygons
@@ -60,7 +62,7 @@ current_figure()
 cs = cellsize(prd)
 
 cmodel = deepcopy(sdm)
-q = median([_estimate_q(cmodel, fold...; α=0.1) for fold in kfold(cmodel; k=15)])
+q = median([_estimate_q(cmodel, fold...; α=0.05) for fold in kfold(cmodel; k=15)])
 
 # rlevels = LinRange(0.01, 0.2, 25)
 # qs = [_estimate_q(cmodel, holdout(cmodel)...; α=u) for u in rlevels]
@@ -81,8 +83,7 @@ heatmap(unsure_in)
 unsure_out = unsure .& (.!distrib)
 heatmap(unsure_out)
 
-
-f = Figure()
+f = Figure(; size=(400, 590))
 ax = Axis(f[1,1]; aspect=DataAspect())
 for p in polygons
     poly!(ax, p, color=:grey90)

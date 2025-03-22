@@ -12,6 +12,8 @@ records = [Occurrence(what="Bigfoot", when=datefun(r[1]), where=(parse(Float64, 
 
 polygons = [
     SpeciesDistributionToolkit.openstreetmap("Oregon"),
+    SpeciesDistributionToolkit.openstreetmap("California"),
+    SpeciesDistributionToolkit.openstreetmap("Nevada"),
     SpeciesDistributionToolkit.openstreetmap("Washington state")
 ]
 
