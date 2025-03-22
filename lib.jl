@@ -1,6 +1,3 @@
-using SpeciesDistributionToolkit
-using Statistics
-
 function _softmax(p)
     w = [exp(p), exp(1-p)]
     return w ./ sum(w)
@@ -22,7 +19,7 @@ function _estimate_q(model, St, Sv; α=0.1, kwargs...)
     end
     # Get the quantile
     n = length(Sv)
-    qᵢ = (n+1)*(1-α)/n
+    qᵢ = ceil((n+1)*(1-α))/n
     q̂ = quantile(𝐶, qᵢ)
     return q̂
 end

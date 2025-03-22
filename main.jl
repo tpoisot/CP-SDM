@@ -1,75 +1,69 @@
 using CairoMakie
+using SpeciesDistributionToolkit
+using Statistics
+import Downloads
+import Dates
+
 include("lib.jl")
 
-CHE = SpeciesDistributionToolkit.openstreetmap("Switzerland")
-bio_vars = collect(1:19)
-provider = RasterData(CHELSA2, BioClim)
-L = SDMLayer{Float32}[
-    SDMLayer(
-        provider;
-        layer = x,
-        SpeciesDistributionToolkit.boundingbox(CHE)...,
-    ) for x in bio_vars
-];
-mask!(L, CHE)
-sp = taxon("Turdus torquatus")
-presences = occurrences(
-    sp,
-    first(L),
-    "occurrenceStatus" => "PRESENT",
-    "limit" => 300,
-    "datasetKey" => "4fa7b334-ce0d-4e88-aaae-2e0c138d049e",
-)
-while length(presences) < min(count(presences), 2_000)
-    occurrences!(presences)
-end
+include("data.jl")
 
-presencelayer = mask(first(L), presences)
+presencelayer = mask(first(L), Occurrences(records))
 background = pseudoabsencemask(DistanceToEvent, presencelayer)
-bgpoints = backgroundpoints(nodata(background, d -> d < 3), 2sum(presencelayer))
+bgpoints = backgroundpoints(nodata(background, d -> d < 10), 2sum(presencelayer))
 
-poly(CHE, color=:grey80)
-scatter!(presencelayer, color=:red)
-scatter!(bgpoints, color=:grey30, markersize=3)
-lines!(CHE, color=:black)
+f = Figure()
+ax = Axis(f[1,1]; aspect=DataAspect())
+for p in polygons
+    poly!(ax, p, color=:grey90)
+    lines!(ax, p, color=:grey10)
+end
+scatter!(ax, presencelayer, color=:white, strokecolor=:forestgreen, strokewidth=2)
+scatter!(ax, bgpoints, color=:grey30, markersize=4)
 current_figure()
 
 # Set up the model
-sdm = SDM(ZScore, Logistic, L, presencelayer, bgpoints)
-hyperparameters!(classifier(sdm), :η, 5e-4);
-hyperparameters!(classifier(sdm), :interactions, :all);
-hyperparameters!(classifier(sdm), :epochs, 8_000);
+sdm = Bagging(SDM(PCATransform, DecisionTree, L, presencelayer, bgpoints), 25)
+#hyperparameters!(classifier(sdm), :η, 1e-3);
+#hyperparameters!(classifier(sdm), :interactions, :self);
+#hyperparameters!(classifier(sdm), :epochs, 8_000);
 
 # Train the model with optimal set of variables
-variables!(sdm, ForwardSelection; included=[1], verbose=true)
-#train!(sdm)
+variables!(sdm, ForwardSelection; verbose=true, bagfeatures=true)
 
 ConfusionMatrix(sdm) |> mcc
 
+# Range
+distrib = predict(sdm, L; threshold=true, consensus=majority)
 prd = predict(sdm, L; threshold=false)
-heatmap(prd)
-lines!(CHE, color=:black)
+
+f = Figure()
+ax = Axis(f[1,1]; aspect=DataAspect())
+heatmap!(ax, prd, colormap=:tempo, colorrange=(0,1))
+for p in polygons
+    lines!(ax, p, color=:grey10)
+end
+scatter!(ax, presencelayer, color=:white, strokecolor=:forestgreen, strokewidth=2)
+hidespines!(ax)
+hidedecorations!(ax)
 current_figure()
 
 # VI
 vi = variableimportance(sdm, [holdout(sdm)]; threshold=false)
 miv = variables(sdm)[last(findmax(vi))]
 
-scatter(features(sdm, 1), predict(sdm; threshold=false))
+scatter(features(sdm, miv), predict(sdm; threshold=false))
 hlines!([threshold(sdm)], color=:red)
 current_figure()
-
-# Range
-distrib = predict(sdm, L)
 
 cs = cellsize(prd)
 
 cmodel = deepcopy(sdm)
-q = _estimate_q(cmodel, holdout(cmodel)...; α=0.005)
+q = median([_estimate_q(cmodel, fold...; α=0.1) for fold in kfold(cmodel; k=15)])
 
-rlevels = LinRange(0.01, 0.2, 25)
-qs = [_estimate_q(cmodel, holdout(cmodel)...; α=u) for u in rlevels]
-scatter(rlevels, qs)
+# rlevels = LinRange(0.01, 0.2, 25)
+# qs = [_estimate_q(cmodel, holdout(cmodel)...; α=u) for u in rlevels]
+# scatter(rlevels, qs)
 
 Cp, Ca = credibleclasses(prd, q)
 heatmap(Ca .& Cp, colorrange=(0, 1))
@@ -86,12 +80,17 @@ heatmap(unsure_in)
 unsure_out = unsure .& (.!distrib)
 heatmap(unsure_out)
 
-poly(CHE, color=:grey90; axis=(; aspect=DataAspect()), figure=(; size=(1000, 550)))
-heatmap!(nodata(sure_presence, false), colormap=[:transparent, :black, :black])
-heatmap!(nodata(unsure_in, false), colormap=[:transparent, :forestgreen])
-heatmap!(nodata(unsure_out, false), colormap=[:transparent, :orange])
-lines!(CHE, color=:black)
-contour!(distrib, color=:grey10, linewidth=1)
-hidedecorations!(current_axis())
-hidespines!(current_axis())
+
+f = Figure()
+ax = Axis(f[1,1]; aspect=DataAspect())
+for p in polygons
+    poly!(ax, p, color=:grey90)
+    lines!(ax, p, color=:grey10)
+end
+heatmap!(ax, nodata(sure_presence, false), colormap=[:transparent, :black])
+heatmap!(ax, nodata(unsure_in, false), colormap=[:transparent, :forestgreen])
+heatmap!(ax, nodata(unsure_out, false), colormap=[:transparent, :orange])
+scatter!(ax, presencelayer, color=:white, strokecolor=:forestgreen, strokewidth=2)
+hidespines!(ax)
+hidedecorations!(ax)
 current_figure()
