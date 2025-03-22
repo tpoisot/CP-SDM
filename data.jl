@@ -17,12 +17,11 @@ polygons = [
 
 extent = SpeciesDistributionToolkit._reconcile(SpeciesDistributionToolkit.boundingbox.(polygons))
 
-provider = RasterData(CHELSA2, BioClim)
-msk_t = SDMLayer(RasterData(CHELSA1, BioClim); layer=1, extent...)
-L = SDMLayer{Float32}[SDMLayer(provider; layer=l, extent...) for l in layers(provider)]
+provider = RasterData(WorldClim2, BioClim)
+L = SDMLayer{Float32}[SDMLayer(provider; resolution=5.0, layer=l, extent...) for l in layers(provider)]
 
 lmask = [mask(L[1], p) for p in polygons]
-msk = reduce(.|, [lm.indices for lm in lmask]) .& msk_t.indices
+msk = reduce(.|, [lm.indices for lm in lmask])
 
 for i in eachindex(L)
     L[i].indices = msk

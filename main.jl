@@ -35,6 +35,7 @@ ConfusionMatrix(sdm) |> mcc
 
 # Range
 distrib = predict(sdm, L; threshold=true, consensus=majority)
+bsvaria = predict(sdm, L; threshold=false, consensus=iqr)
 prd = predict(sdm, L; threshold=false)
 
 f = Figure()
