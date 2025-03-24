@@ -22,7 +22,7 @@ extent = SpeciesDistributionToolkit._reconcile(SpeciesDistributionToolkit.boundi
 provider = RasterData(WorldClim2, BioClim)
 prj = Projection(SSP370, MRI_ESM2_0)
 L = SDMLayer{Float32}[SDMLayer(provider; resolution=2.5, layer=l, extent...) for l in layers(provider)]
-F = SDMLayer{Float32}[SDMLayer(provider, prj; resolution=2.5, layer=l, extent...) for l in layers(provider)]
+F = SDMLayer{Float32}[SDMLayer(provider, prj; resolution=2.5, timespan=Dates.Year(2081) => Dates.Year(2100), layer=l, extent...) for l in layers(provider)]
 
 lmask = [mask(L[1], p) for p in polygons]
 msk = reduce(.|, [lm.indices for lm in lmask])

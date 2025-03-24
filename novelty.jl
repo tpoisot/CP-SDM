@@ -1,17 +1,29 @@
-function novelty(historical, projected, var)
-    μ = mean.(historical[var])
-    σ = std.(historical[var])
-    cr_historical = (historical[var] .- μ) ./ σ
-    cr_projected = (projected[var] .- μ) ./ σ
+function novelty(historical, projected, vars)
+    μ = mean.(historical[vars])
+    σ = std.(historical[vars])
+    cr_historical = (historical[vars] .- μ) ./ σ
+    cr_projected = (projected[vars] .- μ) ./ σ
 
     Δclim = similar(cr_historical[1])
-    vals = values.(cr_projected)
-    
-    for position in keys(cr_historical[1])
-        dtemp = (cr_historical[1][position] .- vals[1]) .^ 2.0
-        dprec = (cr_historical[2][position] .- vals[2]) .^ 2.0
-        Δclim[position] = minimum(sqrt.(dtemp .+ dprec))
+        
+    k = keys(cr_historical[1])
+    vals = values.(cr_historical)
+
+    # Thread-safe structure
+    chunk_size = max(1, length(k) ÷ (5 * Threads.nthreads() ))
+    data_chunks = Base.Iterators.partition(k, chunk_size)
+
+    tasks = map(data_chunks) do chunk
+        Threads.@spawn begin
+            for position in chunk
+                diffs = [(cr_projected[i][position] .- vals[i]).^2.0 for i in eachindex(vals)]
+                sml_dist = findmin(sqrt.(sum(hcat(diffs...); dims=2)))
+                Δclim[position] = first(sml_dist)
+            end
+        end
     end
+
+    fetch.(tasks)
 
     return Δclim
 end
