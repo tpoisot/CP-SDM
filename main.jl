@@ -13,7 +13,7 @@ presencelayer = mask(first(L), Occurrences(records))
 background = pseudoabsencemask(DistanceToEvent, presencelayer)
 bgpoints = backgroundpoints(nodata(background, d -> d < 10), 2sum(presencelayer))
 
-f = Figure(; size=(400, 590))
+f = Figure(; size=(600, 600))
 ax = Axis(f[1,1]; aspect=DataAspect())
 for p in polygons
     poly!(ax, p, color=:grey90)
@@ -26,27 +26,28 @@ hidedecorations!(ax)
 current_figure()
 
 # Set up the model
-sdm = Bagging(SDM(ZScore, DecisionTree, L, presencelayer, bgpoints), 25)
-#hyperparameters!(classifier(sdm), :η, 1e-3);
-#hyperparameters!(classifier(sdm), :interactions, :self);
-#hyperparameters!(classifier(sdm), :epochs, 8_000);
+sdm = SDM(ZScore, Logistic, L, presencelayer, bgpoints)
+hyperparameters!(classifier(sdm), :η, 1e-3);
+hyperparameters!(classifier(sdm), :interactions, :all);
+hyperparameters!(classifier(sdm), :epochs, 8_000);
 
 # Train the model with optimal set of variables
-variables!(sdm, ForwardSelection; verbose=true, bagfeatures=true)
+variables!(sdm, ForwardSelection; verbose=true)
 
 ConfusionMatrix(sdm) |> mcc
 
 # Range
-distrib = predict(sdm, L; threshold=true, consensus=majority)
-bsvaria = predict(sdm, L; threshold=false, consensus=iqr)
+distrib = predict(sdm, L; threshold=true)
+#bsvaria = predict(sdm, L; threshold=false, consensus=iqr)
 prd = predict(sdm, L; threshold=false)
 
-f = Figure(; size=(400, 590))
+f = Figure(; size=(600, 600))
 ax = Axis(f[1,1]; aspect=DataAspect())
 heatmap!(ax, prd, colormap=:tempo, colorrange=(0,1))
 for p in polygons
-    lines!(ax, p, color=:grey10)
+    lines!(ax, p, color=:grey50)
 end
+contour!(ax, distrib, color=:red, levels=1, linestyle=:dot)
 scatter!(ax, presencelayer, color=:white, strokecolor=:forestgreen, strokewidth=2)
 hidespines!(ax)
 hidedecorations!(ax)
@@ -84,7 +85,7 @@ heatmap(unsure_in)
 unsure_out = unsure .& (.!distrib)
 heatmap(unsure_out)
 
-f = Figure(; size=(400, 590))
+f = Figure(; size=(600, 600))
 ax = Axis(f[1,1]; aspect=DataAspect())
 for p in polygons
     poly!(ax, p, color=:grey90)
@@ -93,6 +94,7 @@ end
 heatmap!(ax, nodata(sure_presence, false), colormap=[:transparent, :black])
 heatmap!(ax, nodata(unsure_in, false), colormap=[:transparent, :forestgreen])
 heatmap!(ax, nodata(unsure_out, false), colormap=[:transparent, :orange])
+contour!(ax, distrib, color=:red, levels=1, linestyle=:dot)
 scatter!(ax, presencelayer, color=:white, strokecolor=:forestgreen, strokewidth=2)
 hidespines!(ax)
 hidedecorations!(ax)
@@ -105,4 +107,9 @@ mostdet = mosaic(x -> argmax(abs.(x)), expl)
 
 shaplim(x) = maximum(abs.(quantile(x, [0.05, 0.95]))) .* (-1, 1)
 
-heatmap(expl[4], colormap=:curl, colorrange=shaplim(expl[4]))
+# Important variables (Shapley) only on training data
+svimp = [sum(abs.(ex)) for ex in expl]
+
+heatmap(expl[1], colormap=:curl, colorrange=shaplim(expl[1]))
+
+fprd = predict(sdm, F; threshold=false)
