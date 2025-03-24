@@ -11,7 +11,7 @@ include("data.jl")
 
 presencelayer = mask(first(L), Occurrences(records))
 background = pseudoabsencemask(DistanceToEvent, presencelayer)
-bgpoints = backgroundpoints(nodata(background, d -> d < 10), 2sum(presencelayer))
+bgpoints = backgroundpoints(nodata(background, d -> d < 10), 3sum(presencelayer))
 
 f = Figure(; size=(600, 600))
 ax = Axis(f[1,1]; aspect=DataAspect())
@@ -29,7 +29,7 @@ current_figure()
 sdm = SDM(ZScore, Logistic, L, presencelayer, bgpoints)
 hyperparameters!(classifier(sdm), :η, 1e-3);
 hyperparameters!(classifier(sdm), :interactions, :all);
-hyperparameters!(classifier(sdm), :epochs, 8_000);
+hyperparameters!(classifier(sdm), :epochs, 10_000);
 
 # Train the model with optimal set of variables
 variables!(sdm, ForwardSelection; verbose=true)

@@ -14,6 +14,7 @@ polygons = [
     SpeciesDistributionToolkit.gadm("USA", "Oregon"),
     SpeciesDistributionToolkit.gadm("USA", "California"),
     SpeciesDistributionToolkit.gadm("USA", "Nevada"),
+    SpeciesDistributionToolkit.gadm("USA", "Idaho"),
     SpeciesDistributionToolkit.gadm("USA", "Washington")
 ]
 
