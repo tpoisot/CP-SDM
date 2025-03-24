@@ -3,6 +3,7 @@ using SpeciesDistributionToolkit
 using Statistics
 import Downloads
 import Dates
+import PrettyTables
 
 include("lib.jl")
 
@@ -25,7 +26,7 @@ hidedecorations!(ax)
 current_figure()
 
 # Set up the model
-sdm = Bagging(SDM(PCATransform, DecisionTree, L, presencelayer, bgpoints), 25)
+sdm = Bagging(SDM(ZScore, DecisionTree, L, presencelayer, bgpoints), 25)
 #hyperparameters!(classifier(sdm), :η, 1e-3);
 #hyperparameters!(classifier(sdm), :interactions, :self);
 #hyperparameters!(classifier(sdm), :epochs, 8_000);
@@ -62,7 +63,7 @@ current_figure()
 cs = cellsize(prd)
 
 cmodel = deepcopy(sdm)
-q = median([_estimate_q(cmodel, fold...; α=0.05) for fold in kfold(cmodel; k=15)])
+q = median([_estimate_q(cmodel, fold...; α=0.07) for fold in kfold(cmodel; k=15)])
 
 # rlevels = LinRange(0.01, 0.2, 25)
 # qs = [_estimate_q(cmodel, holdout(cmodel)...; α=u) for u in rlevels]
@@ -96,3 +97,12 @@ scatter!(ax, presencelayer, color=:white, strokecolor=:forestgreen, strokewidth=
 hidespines!(ax)
 hidedecorations!(ax)
 current_figure()
+
+# This needs additional work: coverage by area of uncertainty
+expl = explain(sdm, L; threshold=false)
+
+mostdet = mosaic(x -> argmax(abs.(x)), expl)
+
+shaplim(x) = maximum(abs.(quantile(x, [0.05, 0.95]))) .* (-1, 1)
+
+heatmap(expl[4], colormap=:curl, colorrange=shaplim(expl[4]))

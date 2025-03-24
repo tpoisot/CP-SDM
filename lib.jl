@@ -44,7 +44,7 @@ end
 function cellsize(layer::T; R = 6371.0) where {T <: SDMLayer}
     lonstride, latstride = 2.0 .* stride(layer)
     cells_per_ribbon = 360.0 / lonstride
-    latitudes_ranges = (layer.y[1]):latstride:(layer.y[2])
+    latitudes_ranges = LinRange(layer.y[1], layer.y[2], size(layer, 1)+1)
     # We need to express the latitudes in gradients for the top and bottom of each row of
     # cell
     ϕ1 = deg2rad.(latitudes_ranges[1:(end - 1)])

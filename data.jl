@@ -12,15 +12,15 @@ records = [Occurrence(what="Bigfoot", when=datefun(r[1]), where=(parse(Float64, 
 
 polygons = [
     SpeciesDistributionToolkit.openstreetmap("Oregon"),
-    SpeciesDistributionToolkit.openstreetmap("California"),
-    SpeciesDistributionToolkit.openstreetmap("Nevada"),
+    #SpeciesDistributionToolkit.openstreetmap("California"),
+    #SpeciesDistributionToolkit.openstreetmap("Nevada"),
     SpeciesDistributionToolkit.openstreetmap("Washington state")
 ]
 
 extent = SpeciesDistributionToolkit._reconcile(SpeciesDistributionToolkit.boundingbox.(polygons))
 
 provider = RasterData(WorldClim2, BioClim)
-L = SDMLayer{Float32}[SDMLayer(provider; resolution=5.0, layer=l, extent...) for l in layers(provider)]
+L = SDMLayer{Float32}[SDMLayer(provider; resolution=2.5, layer=l, extent...) for l in layers(provider)]
 
 lmask = [mask(L[1], p) for p in polygons]
 msk = reduce(.|, [lm.indices for lm in lmask])
