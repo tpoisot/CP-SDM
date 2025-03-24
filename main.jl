@@ -6,7 +6,7 @@ import Dates
 import PrettyTables
 
 include("lib.jl")
-
+include("novelty.jl")
 include("data.jl")
 
 presencelayer = mask(first(L), Occurrences(records))
@@ -75,15 +75,10 @@ heatmap(Ca .& Cp, colorrange=(0, 1))
 
 # Partition
 sure_presence = Cp .& (.!Ca)
-heatmap(sure_presence)
 sure_absence = Ca .& (.!Cp)
-heatmap(sure_absence)
 unsure = Ca .& Cp
-heatmap(unsure)
 unsure_in = unsure .& distrib
-heatmap(unsure_in)
 unsure_out = unsure .& (.!distrib)
-heatmap(unsure_out)
 
 f = Figure(; size=(600, 600))
 ax = Axis(f[1,1]; aspect=DataAspect())
@@ -109,7 +104,32 @@ shaplim(x) = maximum(abs.(quantile(x, [0.05, 0.95]))) .* (-1, 1)
 
 # Important variables (Shapley) only on training data
 svimp = [sum(abs.(ex)) for ex in expl]
+smimp = last(findmax(svimp))
 
-heatmap(expl[1], colormap=:curl, colorrange=shaplim(expl[1]))
+heatmap(expl[smimp], colormap=:curl, colorrange=shaplim(expl[smimp]))
+for p in polygons
+    lines!(p, color=:grey10, linewidth=1)
+end
+current_figure()
 
+# Clim change
 fprd = predict(sdm, F; threshold=false)
+nv = novelty(L, F, varaibles(sdm))
+
+fCp, fCa = credibleclasses(fprd, q)
+
+ft_sure_presence = fCp .& (.!fCa)
+ft_sure_absence = fCa .& (.!fCp)
+ft_unsure = fCa .& fCp
+
+f = Figure(; size=(600, 600))
+ax = Axis(f[1,1]; aspect=DataAspect())
+for p in polygons
+    poly!(ax, p, color=:grey90)
+    lines!(ax, p, color=:grey10)
+end
+heatmap!(ax, nodata(sure_presence, false), colormap=[:transparent, :black])
+heatmap!(ax, nodata(unsure, false), colormap=[:transparent, :forestgreen])
+hidespines!(ax)
+hidedecorations!(ax)
+current_figure()
