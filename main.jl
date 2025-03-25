@@ -83,9 +83,12 @@ cs = cellsize(prd)
 cmodel = deepcopy(sdm)
 q = median([_estimate_q(cmodel, fold...; α=0.05) for fold in kfold(cmodel; k=15)])
 
-# rlevels = LinRange(0.01, 0.2, 25)
-# qs = [_estimate_q(cmodel, holdout(cmodel)...; α=u) for u in rlevels]
-# scatter(rlevels, qs)
+# Sensitivity analysis for the miscoverage rate
+rlevels = LinRange(0.01, 0.2, 25)
+qs = [_estimate_q(cmodel, holdout(cmodel)...; α=u) for u in rlevels]
+# TODO get the surface in km² for each category by coverage level
+# TODO implement coverage statistics
+scatter(rlevels, qs)
 
 Cp, Ca = credibleclasses(prd, q)
 heatmap(Ca .& Cp, colorrange=(0, 1))
