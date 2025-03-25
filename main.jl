@@ -11,7 +11,7 @@ include("data.jl")
 
 presencelayer = mask(first(L), Occurrences(records))
 background = pseudoabsencemask(DistanceToEvent, presencelayer)
-bgpoints = backgroundpoints(nodata(background, d -> d < 10), 3sum(presencelayer))
+bgpoints = backgroundpoints(nodata(background, d -> (d < 10)|(d>150)), 3sum(presencelayer))
 
 f = Figure(; size=(600, 600))
 ax = Axis(f[1,1]; aspect=DataAspect())
@@ -81,15 +81,32 @@ current_figure()
 cs = cellsize(prd)
 
 cmodel = deepcopy(sdm)
-q = median([_estimate_q(cmodel, fold...; α=0.05) for fold in kfold(cmodel; k=15)])
 
 # Sensitivity analysis for the miscoverage rate
-rlevels = LinRange(0.01, 0.2, 25)
+rlevels = LinRange(0.005, 0.15, 55)
 qs = [_estimate_q(cmodel, holdout(cmodel)...; α=u) for u in rlevels]
-# TODO get the surface in km² for each category by coverage level
-# TODO implement coverage statistics
-scatter(rlevels, qs)
+surf_presence = zeros(length(qs))
+surf_unsure = zeros(length(qs))
+surf_unsure_presence = zeros(length(qs))
+surf_unsure_absence = zeros(length(qs))
+for i in eachindex(qs)
+    Cp, Ca = credibleclasses(prd, qs[i])
+    sure_presence = Cp .& (.!Ca)
+    unsure = Ca .& Cp
+    unsure_presence = unsure .& distrib
+    unsure_absence = unsure .& (.!distrib)
+    surf_presence[i] = sum(mask(cs, nodata(sure_presence, false)))
+    surf_unsure[i] = sum(mask(cs, nodata(unsure, false)))
+    surf_unsure_presence[i] = sum(mask(cs, nodata(unsure_presence, false)))
+    surf_unsure_absence[i] = sum(mask(cs, nodata(unsure_absence, false)))
+end
 
+hlines([sum(mask(cs, nodata(distrib, false)))], color=:grey50, linestyle=:dash)
+scatter!(rlevels, surf_presence .+ surf_unsure)
+scatter!(rlevels, surf_presence)
+current_figure()
+
+q = median([_estimate_q(cmodel, fold...; α=0.05) for fold in kfold(cmodel; k=15)])
 Cp, Ca = credibleclasses(prd, q)
 heatmap(Ca .& Cp, colorrange=(0, 1))
 
