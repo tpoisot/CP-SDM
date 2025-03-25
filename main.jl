@@ -40,7 +40,7 @@ ConfusionMatrix(sdm) |> mcc
 distrib = predict(sdm, L; threshold=true)
 
 # Bootstrap
-bsdm = Bagging(sdm, 20)
+bsdm = Bagging(sdm, 50)
 train!(bsdm)
 bsvaria = predict(bsdm, L; threshold=false, consensus=iqr)
 
@@ -52,7 +52,7 @@ heatmap!(ax, prd, colormap=:navia, colorrange=(0,1))
 for p in polygons
     lines!(ax, p, color=:grey50)
 end
-contour!(ax, distrib, color=:red, levels=1, linestyle=:dot)
+contour!(ax, distrib, color=:red, levels=1)
 scatter!(ax, presencelayer, color=:white, strokecolor=:forestgreen, strokewidth=2)
 hidespines!(ax)
 hidedecorations!(ax)
@@ -61,11 +61,11 @@ current_figure()
 # Uncertainty heatmap
 f = Figure(; size=(600, 600))
 ax = Axis(f[1,1]; aspect=DataAspect())
-heatmap!(ax, quantize(bsvaria, 100), colormap=:lipari, colorrange=(0,1))
+heatmap!(ax, quantize(bsvaria, 100), colormap=:nuuk, colorrange=(0,1))
 for p in polygons
     lines!(ax, p, color=:grey50)
 end
-contour!(ax, distrib, color=:red, levels=1, linestyle=:dot)
+contour!(ax, distrib, color=:red, levels=1)
 hidespines!(ax)
 hidedecorations!(ax)
 current_figure()
