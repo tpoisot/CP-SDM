@@ -12,7 +12,7 @@ function _estimate_q(model, St, Sv; α=0.1, kwargs...)
     train!(model; training=St, kwargs...)
     f̂ = predict(model; threshold=false)[Sv]
     𝐶 = zeros(length(f̂))
-    s = _no_softmax.(f̂)
+    s = _softmax.(f̂)
     # Conformal score from the true class label
     for i in eachindex(𝐶)
         𝐶[i] = 1 - (labels(model)[Sv[i]] ? s[i][1] : s[i][2])
@@ -24,19 +24,29 @@ function _estimate_q(model, St, Sv; α=0.1, kwargs...)
     return q̂
 end
 
-function credibleclasses(prediction, q)
+function credibleclasses(prediction::SDMLayer, q)
     presence = zeros(prediction, Bool)
     absence = zeros(prediction, Bool)
     for k in keys(prediction)
-        s₊, s₋ = _no_softmax(prediction[k])
-        if s₊ >= (1-q)
+        ℂ = credibleclasses(prediction[k], q)
+        if true in ℂ
             presence[k] = true
         end
-        if s₋ >= (1-q)
+        if false in ℂ
             absence[k] = true
         end
     end
     return (presence, absence)
 end
 
-# Yah
+function credibleclasses(prediction::Number, q)
+    s₊, s₋ = _softmax(prediction)
+    out = Bool[]
+    if s₊ >= (1-q)
+        push!(out, true)
+    end
+    if s₋ >= (1-q)
+        push!(out, false)
+    end
+    return Set(out)
+end

@@ -50,7 +50,7 @@ prd = predict(sdm, L; threshold=false)
 
 f = Figure(; size=(600, 600))
 ax = Axis(f[1,1]; aspect=DataAspect())
-heatmap!(ax, prd, colormap=:navia, colorrange=(0,1))
+hm = heatmap!(ax, prd, colormap=:navia, colorrange=(0,1))
 for p in polygons
     lines!(ax, p, color=:grey50)
 end
@@ -58,18 +58,44 @@ contour!(ax, distrib, color=:red, levels=1)
 scatter!(ax, presencelayer, color=:white, strokecolor=:forestgreen, strokewidth=2)
 hidespines!(ax)
 hidedecorations!(ax)
+Colorbar(
+    f[1, 1],
+    hm;
+    label = "Prediction (presence)",
+    alignmode = Inside(),
+    height = Relative(0.4),
+    flipaxis = false,
+    valign = :bottom,
+    halign = :right,
+    tellheight = false,
+    tellwidth = false,
+    vertical = true,
+)
 current_figure()
 
 # Uncertainty heatmap
 f = Figure(; size=(600, 600))
 ax = Axis(f[1,1]; aspect=DataAspect())
-heatmap!(ax, quantize(bsvaria, 100), colormap=:nuuk, colorrange=(0,1))
+hm = heatmap!(ax, quantize(bsvaria, 100), colormap=:nuuk, colorrange=(0,1))
 for p in polygons
     lines!(ax, p, color=:grey50)
 end
 contour!(ax, distrib, color=:red, levels=1)
 hidespines!(ax)
 hidedecorations!(ax)
+Colorbar(
+    f[1, 1],
+    hm;
+    label = "Inter-quantile range",
+    alignmode = Inside(),
+    height = Relative(0.4),
+    flipaxis = false,
+    valign = :bottom,
+    halign = :right,
+    tellheight = false,
+    tellwidth = false,
+    vertical = true,
+)
 current_figure()
 
 # VI
@@ -85,12 +111,16 @@ cs = cellsize(prd)
 cmodel = deepcopy(sdm)
 
 # Sensitivity analysis for the miscoverage rate
-rlevels = LinRange(0.005, 0.15, 55)
+rlevels = 10.0.^LinRange(-2, -0.5, 120)
 qs = [_estimate_q(cmodel, holdout(cmodel)...; α=u) for u in rlevels]
 surf_presence = zeros(length(qs))
 surf_unsure = zeros(length(qs))
 surf_unsure_presence = zeros(length(qs))
 surf_unsure_absence = zeros(length(qs))
+
+𝐏 = predict(sdm; threshold=false)
+eff = [mean(length.(credibleclasses.(𝐏, q))) for q in qs]
+
 for i in eachindex(qs)
     Cp, Ca = credibleclasses(prd, qs[i])
     sure_presence = Cp .& (.!Ca)
@@ -103,12 +133,19 @@ for i in eachindex(qs)
     surf_unsure_absence[i] = sum(mask(cs, nodata(unsure_absence, false)))
 end
 
-hlines([sum(mask(cs, nodata(distrib, false)))], color=:grey50, linestyle=:dash)
-scatter!(rlevels, surf_presence .+ surf_unsure)
-scatter!(rlevels, surf_presence)
+# Figure with changing risk level
+f = Figure()
+ax = Axis(f[2,1], xscale=log10)
+hlines!(ax, [1.0], color=:grey50, linestyle=:dash)
+scatter!(ax, rlevels, eff)
+ax2 = Axis(f[1, 1], xscale=log10)
+hlines!(ax2, [sum(mask(cs, nodata(distrib, false)))], color=:grey50, linestyle=:dash)
+scatter!(ax2, rlevels, surf_presence .+ surf_unsure)
+scatter!(ax2, rlevels, surf_presence)
 current_figure()
 
-q = median([_estimate_q(cmodel, fold...; α=0.05) for fold in kfold(cmodel; k=15)])
+# Cross-conformal with median range selected
+q = median([_estimate_q(cmodel, fold...; α=0.05) for fold in kfold(cmodel; k=10)])
 Cp, Ca = credibleclasses(prd, q)
 heatmap(Ca .& Cp, colorrange=(0, 1))
 
@@ -146,10 +183,23 @@ smimp = last(findmax(svimp))
 
 f = Figure(; size=(600, 600))
 ax = Axis(f[1,1]; aspect=DataAspect())
-heatmap!(ax, expl[smimp], colormap=:roma, colorrange=shaplim(expl[smimp]))
+hm = heatmap!(ax, expl[smimp], colormap=:roma, colorrange=shaplim(expl[smimp]))
 for p in polygons
     lines!(ax, p, color=:grey10, linewidth=1)
 end
+Colorbar(
+    f[1, 1],
+    hm;
+    label = "Impact on prediction",
+    alignmode = Inside(),
+    height = Relative(0.4),
+    flipaxis = false,
+    valign = :bottom,
+    halign = :right,
+    tellheight = false,
+    tellwidth = false,
+    vertical = true,
+)
 hidespines!(ax)
 hidedecorations!(ax)
 current_figure()
@@ -179,10 +229,23 @@ nv = novelty(L, F, variables(sdm))
 # Novelty map
 f = Figure(; size=(600, 600))
 ax = Axis(f[1,1]; aspect=DataAspect())
-heatmap!(ax, (nv .- mean(nv))./std(nv), colormap=:broc, colorrange=shaplim((nv .- mean(nv))./std(nv)))
+hm = heatmap!(ax, (nv .- mean(nv))./std(nv), colormap=:broc, colorrange=shaplim((nv .- mean(nv))./std(nv)))
 for p in polygons
     lines!(ax, p, color=:grey10, linewidth=1)
 end
+Colorbar(
+    f[1, 1],
+    hm;
+    label = "Relative climate novelty",
+    alignmode = Inside(),
+    height = Relative(0.4),
+    flipaxis = false,
+    valign = :bottom,
+    halign = :right,
+    tellheight = false,
+    tellwidth = false,
+    vertical = true,
+)
 hidespines!(ax)
 hidedecorations!(ax)
 current_figure()
@@ -226,30 +289,38 @@ for ax in [ax_sa, ax_sp, ax_ua, ax_up]
 end
 current_figure()
 
+cmap = [colorant"#fdb863", colorant"#e66101", colorant"#020202",colorant"#5e3c99", colorant"#b2abd2"]
+
 # Future scenarios transitions
 f = Figure(; size=(600, 600))
 ax = Axis(f[1,1]; aspect=DataAspect())
 for p in polygons
-    poly!(ax, p, color=:grey90)
+    poly!(ax, p, color=:grey95)
     lines!(ax, p, color=:grey10)
 end
-heatmap!(ax, nodata(sure_presence .& ft_sure_presence,  false), colormap=[:black])
-heatmap!(ax, nodata(sure_absence .& ft_unsure, false), colormap=[colorant"#6699ff"])
-heatmap!(ax, nodata(sure_presence .& ft_unsure, false), colormap=[colorant"#ffcc66"])
-heatmap!(ax, nodata(unsure .& ft_unsure, false), colormap=[:grey40])
-heatmap!(ax, nodata((sure_absence .| unsure) .& ft_sure_presence, false), colormap=[colorant"#3333cc"]) # Certain gain
-heatmap!(ax, nodata((sure_presence .| unsure) .& ft_sure_absence, false), colormap=[colorant"#ff6600"]) # Certain loss
+heatmap!(ax, nodata(sure_presence .& ft_sure_presence,  false), colormap=[cmap[3]])
+heatmap!(ax, nodata(sure_absence .& ft_unsure, false), colormap=[cmap[5]])
+heatmap!(ax, nodata(sure_presence .& ft_unsure, false), colormap=[cmap[1]])
+heatmap!(ax, nodata(unsure .& ft_unsure, false), colormap=[:grey70])
+heatmap!(ax, nodata((sure_absence .| unsure) .& ft_sure_presence, false), colormap=[cmap[4]]) # Certain gain
+heatmap!(ax, nodata((sure_presence .| unsure) .& ft_sure_absence, false), colormap=[cmap[2]]) # Certain loss
 for p in polygons
     lines!(ax, p, color=:grey10, linewidth=1)
 end
 hidespines!(ax)
 hidedecorations!(ax)
 Legend(
-    f[2, 1],
-    [PolyElement(; color = c) for c in [:black, :grey50, colorant"#ff6600", colorant"#ffcc66", colorant"#3333cc", colorant"#6699ff"]],
-    ["Conserved", "Ambiguous", "Certain loss", "Possible loss", "Certain gain", "Possible gain"];
-    orientation = :horizontal,
-    nbanks = 2,
+    f[1, 1],
+    alignmode = Inside(),
+    height = Relative(0.4),
+    valign = :bottom,
+    halign = :right,
+    tellheight = false,
+    tellwidth = false,
+    [PolyElement(; color = c) for c in [cmap..., :grey70]],
+    ["Possible loss", "Sure loss", "Conserved", "Sure gain", "Possible gain", "Ambiguous"];
+    orientation = :vertical,
+    nbanks = 1,
     framevisible = false,
     vertical = false,
 )
