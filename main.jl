@@ -5,13 +5,15 @@ import Downloads
 import Dates
 import PrettyTables
 
+# Load the functions we need here
 include("lib.jl")
+include("cellsize.jl")
 include("novelty.jl")
 include("data.jl")
 
 presencelayer = mask(first(L), Occurrences(records))
 background = pseudoabsencemask(DistanceToEvent, presencelayer)
-bgpoints = backgroundpoints(nodata(background, d -> (d < 10)|(d>150)), 3sum(presencelayer))
+bgpoints = backgroundpoints(nodata(background, d -> d < 10), 3sum(presencelayer))
 
 f = Figure(; size=(600, 600))
 ax = Axis(f[1,1]; aspect=DataAspect())
