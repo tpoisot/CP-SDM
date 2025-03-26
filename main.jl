@@ -181,9 +181,9 @@ ax3 = Axis(f[2,2], xlabel="Inter-quantile range (ensemble)")
 # Bins
 bins = LinRange(0.0, round(quantile(bsvaria, 0.9); digits=2), 80)
 hiparams = (; bins=bins, normalization=:pdf)
-hist!(ax3, mask(bsvaria, nodata(sure_absence, false)); label="Sure absence", hiparams...)
-hist!(ax3, mask(bsvaria, nodata(unsure, false)); label="Unsure", hiparams...)
-hist!(ax3, mask(bsvaria, nodata(sure_presence, false)); label="Sure presence", hiparams...)
+hist!(ax3, mask(bsvaria, nodata(sure_absence, false)); color=(:orange, 0.7), label="Sure absence", hiparams...)
+hist!(ax3, mask(bsvaria, nodata(unsure, false)); color=(:grey80, 0.7), label="Unsure", hiparams...)
+hist!(ax3, mask(bsvaria, nodata(sure_presence, false)); color=(:forestgreen, 0.7), label="Sure presence", hiparams...)
 axislegend(ax3, nbanks=3)
 tightlimits!(ax3)
 hideydecorations!(ax3)
@@ -215,25 +215,28 @@ scatter!(ax2, rlevels, eff, color=:black)
 CairoMakie.save(joinpath(fpath, "undetrange.png"), current_figure())
 current_figure()
 
-# This needs additional work: coverage by area of uncertainty
-expl = explain(sdm, L; threshold=false)
+# Shapley values
+S = explain(sdm, L; threshold=false)
 
-mostdet = mosaic(x -> argmax(abs.(x)), expl)
+# Most important Shapley value (for fun, not used in the paper)
+mostdet = mosaic(x -> argmax(abs.(x)), S)
 
-shaplim(x) = maximum(abs.(quantile(x, [0.01, 0.99]))) .* (-1, 1)
+# Custom function for Shapley limits
+shaplim(x) = maximum(abs.(quantile(x, [0.13, 0.87]))) .* (-1, 1)
 
 # Important variables (Shapley) only on training data
-svimp = [sum(abs.(ex)) for ex in expl]
+svimp = [mean(abs.(ex)) for ex in S]
 smimp = last(findmax(svimp))
 
-f = Figure(; size=(600, 600))
-ax = Axis(f[1,1]; aspect=DataAspect())
-hm = heatmap!(ax, expl[smimp], colormap=:roma, colorrange=shaplim(expl[smimp]))
+# Map with Shapley and contributions
+f = Figure(; size=(1200, 600))
+ax = Axis(f[1:2,1]; aspect=DataAspect())
+hm = heatmap!(ax, S[smimp], colormap=:RdYlBu, colorrange=shaplim(S[smimp]))
 for p in polygons
     lines!(ax, p, color=:grey10, linewidth=1)
 end
 Colorbar(
-    f[1, 1],
+    f[1:2, 1],
     hm;
     label = "Impact on prediction",
     alignmode = Inside(),
@@ -247,23 +250,26 @@ Colorbar(
 )
 hidespines!(ax)
 hidedecorations!(ax)
-current_figure()
-
-# Shapvals histogram
-f = Figure()
-ax_sa = Axis(f[1,1])
-ax_sp = Axis(f[2,1])
-ax_ua = Axis(f[1,2])
-ax_up = Axis(f[2,2])
-hist!(ax_sa, mask(expl[smimp], nodata(sure_absence, false)), bins=LinRange(-0.5, 0.5, 40), color=:red)
-hist!(ax_sp, mask(expl[smimp], nodata(sure_presence, false)), bins=LinRange(-0.5, 0.5, 40), color=:green)
-hist!(ax_ua, mask(expl[smimp], nodata(unsure_out, false)), bins=LinRange(-0.5, 0.5, 40), color=:pink)
-hist!(ax_up, mask(expl[smimp], nodata(unsure_in, false)), bins=LinRange(-0.5, 0.5, 40), color=:lime)
-for ax in [ax_sa, ax_sp, ax_ua, ax_up]
-    xlims!(ax, (-0.5, 0.5))
-    hideydecorations!(ax)
-    tightlimits!(ax)
-end
+ax2 = Axis(f[1,2], xlabel="Effect on prediction")
+bins = LinRange(shaplim(S[smimp])..., 100)
+hist!(ax2, mask(S[smimp], nodata(sure_absence, false)), color=(:orange, 0.7), bins=bins, normalization=:pdf)
+hist!(ax2, mask(S[smimp], nodata(sure_presence, false)), color=(:grey80, 0.7), bins=bins, normalization=:pdf)
+hist!(ax2, mask(S[smimp], nodata(unsure, false)), color=(:forestgreen, 0.7), bins=bins, normalization=:pdf)
+tightlimits!(ax2)
+hideydecorations!(ax2)
+hidespines!(ax2, :r)
+hidespines!(ax2, :l)
+hidespines!(ax2, :t)
+ax3 = Axis(f[2,2], xlabel="Variable", ylabel="Relative importance")
+surea_imp = [mean(abs.(mask(ex, nodata(sure_absence, false)))) for ex in S]
+uns_imp = [mean(abs.(mask(ex, nodata(unsure, false)))) for ex in S]
+surep_imp = [mean(abs.(mask(ex, nodata(sure_presence, false)))) for ex in S]
+scatterlines!(ax3, svimp./sum(svimp), color=:black, linewidth=1, linestyle=:dot)
+scatterlines!(ax3, surea_imp./sum(surea_imp), color=:orange, label="Sure absence")
+scatterlines!(ax3, uns_imp./sum(uns_imp), color=:grey60, label="Unsure")
+scatterlines!(ax3, surep_imp./sum(surep_imp), color=:forestgreen, label="Sure presence")
+axislegend(ax3)
+CairoMakie.save(joinpath(fpath, "shapley.png"), current_figure())
 current_figure()
 
 # Clim change
