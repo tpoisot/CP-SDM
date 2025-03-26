@@ -275,31 +275,6 @@ current_figure()
 # Clim change
 fprd = predict(sdm, F; threshold=false)
 ft_distrib = predict(sdm, F; threshold=true)
-nv = novelty(L, F, variables(sdm))
-
-# Novelty map
-f = Figure(; size=(600, 600))
-ax = Axis(f[1,1]; aspect=DataAspect())
-hm = heatmap!(ax, (nv .- mean(nv))./std(nv), colormap=:broc, colorrange=shaplim((nv .- mean(nv))./std(nv)))
-for p in polygons
-    lines!(ax, p, color=:grey10, linewidth=1)
-end
-Colorbar(
-    f[1, 1],
-    hm;
-    label = "Relative climate novelty",
-    alignmode = Inside(),
-    height = Relative(0.4),
-    flipaxis = false,
-    valign = :bottom,
-    halign = :right,
-    tellheight = false,
-    tellwidth = false,
-    vertical = true,
-)
-hidespines!(ax)
-hidedecorations!(ax)
-current_figure()
 
 fCp, fCa = credibleclasses(fprd, q)
 
@@ -309,59 +284,29 @@ ft_unsure = fCa .& fCp
 ft_unsure_in = ft_unsure .& ft_distrib
 ft_unsure_out = ft_unsure .& (.!ft_distrib)
 
-f = Figure(; size=(600, 600))
-ax = Axis(f[1,1]; aspect=DataAspect())
-for p in polygons
-    poly!(ax, p, color=:grey90)
-    lines!(ax, p, color=:grey10)
+# Figure with projection and gain/Loss
+f = Figure(; size=(1200, 600))
+ax1 = Axis(f[1,1]; aspect=DataAspect())
+ax2 = Axis(f[1,2]; aspect=DataAspect())
+for ax in [ax1, ax2]
+    for p in polygons
+        poly!(ax, p, color=:grey90)
+        lines!(ax, p, color=:grey10)
+    end
 end
-heatmap!(ax, nodata(ft_sure_presence, false), colormap=[:transparent, :black])
-heatmap!(ax, nodata(ft_unsure_in, false), colormap=[:transparent, :forestgreen])
-heatmap!(ax, nodata(ft_unsure_out, false), colormap=[:transparent, :orange])
-contour!(ax, ft_distrib, color=:red, levels=1)
-hidespines!(ax)
-hidedecorations!(ax)
-current_figure()
-
-# Hists
-f = Figure()
-ax_sa = Axis(f[1,1]; xscale=identity)
-ax_sp = Axis(f[2,1]; xscale=identity)
-ax_ua = Axis(f[1,2]; xscale=identity)
-ax_up = Axis(f[2,2]; xscale=identity)
-hist!(ax_sa, mask(nv, nodata(ft_sure_absence, false)), bins=LinRange(0.1, 1.5, 40))
-hist!(ax_sp, mask(nv, nodata(ft_sure_presence, false)), bins=LinRange(0.1, 1.5, 40))
-hist!(ax_ua, mask(nv, nodata(ft_unsure_out, false)), bins=LinRange(0.1, 1.5, 40))
-hist!(ax_up, mask(nv, nodata(ft_unsure_in, false)), bins=LinRange(0.1, 1.5, 40))
-for ax in [ax_sa, ax_sp, ax_ua, ax_up]
-    xlims!(ax, (0.1, 1.0))
-    hideydecorations!(ax)
-    tightlimits!(ax)
-end
-current_figure()
-
+heatmap!(ax1, nodata(ft_sure_presence, false), colormap=[:transparent, :black])
+heatmap!(ax1, nodata(ft_unsure_in, false), colormap=[:transparent, :forestgreen])
+heatmap!(ax1, nodata(ft_unsure_out, false), colormap=[:transparent, :orange])
+contour!(ax1, ft_distrib, color=:red, levels=1)
 cmap = [colorant"#fdb863", colorant"#e66101", colorant"#020202",colorant"#5e3c99", colorant"#b2abd2"]
-
-# Future scenarios transitions
-f = Figure(; size=(600, 600))
-ax = Axis(f[1,1]; aspect=DataAspect())
-for p in polygons
-    poly!(ax, p, color=:grey95)
-    lines!(ax, p, color=:grey10)
-end
-heatmap!(ax, nodata(sure_presence .& ft_sure_presence,  false), colormap=[cmap[3]])
-heatmap!(ax, nodata(sure_absence .& ft_unsure, false), colormap=[cmap[5]])
-heatmap!(ax, nodata(sure_presence .& ft_unsure, false), colormap=[cmap[1]])
-heatmap!(ax, nodata(unsure .& ft_unsure, false), colormap=[:grey70])
-heatmap!(ax, nodata((sure_absence .| unsure) .& ft_sure_presence, false), colormap=[cmap[4]]) # Certain gain
-heatmap!(ax, nodata((sure_presence .| unsure) .& ft_sure_absence, false), colormap=[cmap[2]]) # Certain loss
-for p in polygons
-    lines!(ax, p, color=:grey10, linewidth=1)
-end
-hidespines!(ax)
-hidedecorations!(ax)
+heatmap!(ax2, nodata(sure_presence .& ft_sure_presence,  false), colormap=[cmap[3]])
+heatmap!(ax2, nodata(sure_absence .& ft_unsure, false), colormap=[cmap[5]])
+heatmap!(ax2, nodata(sure_presence .& ft_unsure, false), colormap=[cmap[1]])
+heatmap!(ax2, nodata(unsure .& ft_unsure, false), colormap=[:grey70])
+heatmap!(ax2, nodata((sure_absence .| unsure) .& ft_sure_presence, false), colormap=[cmap[4]]) # Certain gain
+heatmap!(ax2, nodata((sure_presence .| unsure) .& ft_sure_absence, false), colormap=[cmap[2]]) # Certain loss
 Legend(
-    f[1, 1],
+    f[1, 2],
     alignmode = Inside(),
     height = Relative(0.4),
     valign = :bottom,
@@ -375,4 +320,49 @@ Legend(
     framevisible = false,
     vertical = false,
 )
+for ax in [ax1, ax2]
+    for p in polygons
+        lines!(ax, p, color=:grey10)
+    end
+    hidedecorations!(ax)
+    hidespines!(ax)
+end
+CairoMakie.save(joinpath(fpath, "rangechange.png"), current_figure())
+current_figure()
+
+nv = novelty(L, F, variables(sdm))
+
+# Novelty map + histograms
+f = Figure(; size=(1200, 600))
+ax = Axis(f[1:3,1]; aspect=DataAspect())
+hm = heatmap!(ax, (nv .- mean(nv))./std(nv), colormap=:broc, colorrange=shaplim((nv .- mean(nv))./std(nv)))
+for p in polygons
+    lines!(ax, p, color=:grey10, linewidth=1)
+end
+Colorbar(
+    f[1:3, 1],
+    hm;
+    label = "Relative climate novelty",
+    alignmode = Inside(),
+    height = Relative(0.4),
+    flipaxis = false,
+    valign = :bottom,
+    halign = :right,
+    tellheight = false,
+    tellwidth = false,
+    vertical = true,
+)
+hidespines!(ax)
+hidedecorations!(ax)
+ax_sa = Axis(f[1,2]; xscale=identity)
+ax_us = Axis(f[2,2]; xscale=identity)
+ax_sp = Axis(f[3,2]; xscale=identity)
+hist!(ax_sa, mask(nv, nodata(ft_sure_absence, false)), bins=LinRange(0.1, 1.5, 80), color=(:orange, 0.7))
+hist!(ax_us, mask(nv, nodata(ft_unsure, false)), bins=LinRange(0.1, 1.5, 80), color=(:grey60, 0.7))
+hist!(ax_sp, mask(nv, nodata(ft_sure_presence, false)), bins=LinRange(0.1, 1.5, 80), color=(:forestgreen, 0.7))
+for ax in [ax_sa, ax_sp, ax_us]
+    xlims!(ax, (0.1, 1.0))
+    hideydecorations!(ax)
+    tightlimits!(ax)
+end
 current_figure()
