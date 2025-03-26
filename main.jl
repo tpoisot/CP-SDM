@@ -4,66 +4,81 @@ using Statistics
 import Downloads
 import Dates
 import PrettyTables
+import Random
+Random.seed!(42069)
 
 # Load the functions we need here
+include("theme.jl")
 include("lib.jl")
 include("cellsize.jl")
 include("novelty.jl")
 include("data.jl")
 
+# Paths to store outputs
+fpath = joinpath(@__DIR__, "figures")
+apath = joinpath(@__DIR__, "artifacts")
+if ~ispath(fpath)
+    mkpath(fpath)
+end
+if ~ispath(apath)
+    mkpath(apath)
+end
+
+# Generate pseudo-absences
+δ = 0.7 # Tapering for distance
 presencelayer = mask(first(L), Occurrences(records))
 background = pseudoabsencemask(DistanceToEvent, presencelayer)
-bgpoints = backgroundpoints(nodata(background, d -> d < 10), 3sum(presencelayer))
+bgpoints = backgroundpoints(nodata(background, d -> d < 10).^δ, 3sum(presencelayer))
 
+# Plot the figure for presence/absence
 f = Figure(; size=(600, 600))
 ax = Axis(f[1,1]; aspect=DataAspect())
 for p in polygons
-    poly!(ax, p, color=:grey90)
+    poly!(ax, p, color=:grey95)
     lines!(ax, p, color=:grey10)
 end
 scatter!(ax, presencelayer, color=:white, strokecolor=:forestgreen, strokewidth=2)
 scatter!(ax, bgpoints, color=:grey30, markersize=4)
 hidespines!(ax)
 hidedecorations!(ax)
+CairoMakie.save(joinpath(fpath, "occurrrences.png"), current_figure())
 current_figure()
 
-# Set up the model
+# Set up the model - logistic regression with Z-score before
 sdm = SDM(ZScore, Logistic, L, presencelayer, bgpoints)
-hyperparameters!(classifier(sdm), :η, 1e-3);
-hyperparameters!(classifier(sdm), :interactions, :all);
-hyperparameters!(classifier(sdm), :epochs, 10_000);
+hyperparameters!(classifier(sdm), :η, 1e-3) # Slow descent
+hyperparameters!(classifier(sdm), :interactions, :all) # All interactions
+hyperparameters!(classifier(sdm), :epochs, 10_000) # Longer training
 
-# Train the model with optimal set of variables
+# Train the model with optimal set of variables, using forward selection and MCC
+# as the measure
 variables!(sdm, ForwardSelection; verbose=true)
 
+# Measure of model performance
 ConfusionMatrix(sdm) |> mcc
 
 # Range
 distrib = predict(sdm, L; threshold=true)
 
-# Bootstrap
+# Bootstrap to get to uncertainty - we re-train 50 models with the same
+# features, but different bags
 bsdm = Bagging(sdm, 50)
+bsdm |> outofbag |> (M) -> 1 - accuracy(M) # OOB error
 train!(bsdm)
 bsvaria = predict(bsdm, L; threshold=false, consensus=iqr)
 
+# Prediction based on baseline data
 prd = predict(sdm, L; threshold=false)
 
-f = Figure(; size=(600, 600))
-ax = Axis(f[1,1]; aspect=DataAspect())
-hm = heatmap!(ax, prd, colormap=:navia, colorrange=(0,1))
-for p in polygons
-    lines!(ax, p, color=:grey50)
-end
-contour!(ax, distrib, color=:red, levels=1)
-scatter!(ax, presencelayer, color=:white, strokecolor=:forestgreen, strokewidth=2)
-hidespines!(ax)
-hidedecorations!(ax)
+f = Figure(; size=(1200, 600))
+ax1 = Axis(f[1,1]; aspect=DataAspect())
+hm1 = heatmap!(ax1, prd, colormap=:navia, colorrange=(0,1))
 Colorbar(
     f[1, 1],
-    hm;
+    hm1;
     label = "Prediction (presence)",
     alignmode = Inside(),
-    height = Relative(0.4),
+    height = Relative(0.5),
     flipaxis = false,
     valign = :bottom,
     halign = :right,
@@ -71,24 +86,14 @@ Colorbar(
     tellwidth = false,
     vertical = true,
 )
-current_figure()
-
-# Uncertainty heatmap
-f = Figure(; size=(600, 600))
-ax = Axis(f[1,1]; aspect=DataAspect())
-hm = heatmap!(ax, quantize(bsvaria, 100), colormap=:nuuk, colorrange=(0,1))
-for p in polygons
-    lines!(ax, p, color=:grey50)
-end
-contour!(ax, distrib, color=:red, levels=1)
-hidespines!(ax)
-hidedecorations!(ax)
+ax2 = Axis(f[1,2]; aspect=DataAspect())
+hm2 = heatmap!(ax2, quantize(bsvaria, 100), colormap=:nuuk, colorrange=(0,1))
 Colorbar(
-    f[1, 1],
-    hm;
+    f[1, 2],
+    hm2;
     label = "Inter-quantile range",
     alignmode = Inside(),
-    height = Relative(0.4),
+    height = Relative(0.5),
     flipaxis = false,
     valign = :bottom,
     halign = :right,
@@ -96,10 +101,19 @@ Colorbar(
     tellwidth = false,
     vertical = true,
 )
+for ax in [ax1, ax2]
+    hidespines!(ax)
+    hidedecorations!(ax)
+    for p in polygons
+        lines!(ax, p, color=:grey50)
+    end
+    contour!(ax, distrib, color=:red, levels=1)
+end
+CairoMakie.save(joinpath(fpath, "prediction.png"), current_figure())
 current_figure()
 
 # VI
-vi = variableimportance(sdm, [holdout(sdm)]; threshold=false)
+vi = variableimportance(sdm, kfold(sdm); threshold=false)
 miv = variables(sdm)[last(findmax(vi))]
 
 scatter(features(sdm, miv), predict(sdm; threshold=false))
@@ -111,7 +125,7 @@ cs = cellsize(prd)
 cmodel = deepcopy(sdm)
 
 # Sensitivity analysis for the miscoverage rate
-rlevels = 10.0.^LinRange(-2, -0.5, 120)
+rlevels = LinRange(0.01, 0.2, 50)
 qs = [_estimate_q(cmodel, holdout(cmodel)...; α=u) for u in rlevels]
 surf_presence = zeros(length(qs))
 surf_unsure = zeros(length(qs))
@@ -133,21 +147,9 @@ for i in eachindex(qs)
     surf_unsure_absence[i] = sum(mask(cs, nodata(unsure_absence, false)))
 end
 
-# Figure with changing risk level
-f = Figure()
-ax = Axis(f[2,1], xscale=log10)
-hlines!(ax, [1.0], color=:grey50, linestyle=:dash)
-scatter!(ax, rlevels, eff)
-ax2 = Axis(f[1, 1], xscale=log10)
-hlines!(ax2, [sum(mask(cs, nodata(distrib, false)))], color=:grey50, linestyle=:dash)
-scatter!(ax2, rlevels, surf_presence .+ surf_unsure)
-scatter!(ax2, rlevels, surf_presence)
-current_figure()
-
 # Cross-conformal with median range selected
 q = median([_estimate_q(cmodel, fold...; α=0.05) for fold in kfold(cmodel; k=10)])
 Cp, Ca = credibleclasses(prd, q)
-heatmap(Ca .& Cp, colorrange=(0, 1))
 
 # Partition
 sure_presence = Cp .& (.!Ca)
@@ -156,10 +158,11 @@ unsure = Ca .& Cp
 unsure_in = unsure .& distrib
 unsure_out = unsure .& (.!distrib)
 
-f = Figure(; size=(600, 600))
-ax = Axis(f[1,1]; aspect=DataAspect())
+# Big figure with range and uncertainty
+f = Figure(; size=(1200, 600))
+ax = Axis(f[1:2,1]; aspect=DataAspect())
 for p in polygons
-    poly!(ax, p, color=:grey90)
+    poly!(ax, p, color=:grey95)
     lines!(ax, p, color=:grey10)
 end
 heatmap!(ax, nodata(sure_presence, false), colormap=[:transparent, :black])
@@ -168,6 +171,48 @@ heatmap!(ax, nodata(unsure_out, false), colormap=[:transparent, :orange])
 contour!(ax, distrib, color=:red, levels=1)
 hidespines!(ax)
 hidedecorations!(ax)
+ax2 = Axis(f[1,2], xlabel="Risk level α", yscale=log10, ylabel="Range (km²)")
+ylims!(ax2, 1e4, 1e6)
+hlines!(ax2, [sum(mask(cs, nodata(distrib, false)))], color=:grey50, linestyle=:dash, label="SDM range")
+scatter!(ax2, rlevels, surf_presence, color=:grey10, marker=:rect, label="Sure range")
+scatter!(ax2, rlevels, surf_presence .+ surf_unsure, color=:grey40, label="Total range")
+axislegend(ax2, position=:rb)
+ax3 = Axis(f[2,2], xlabel="Inter-quantile range (ensemble)")
+# Bins
+bins = LinRange(0.0, round(quantile(bsvaria, 0.9); digits=2), 80)
+hiparams = (; bins=bins, normalization=:pdf)
+hist!(ax3, mask(bsvaria, nodata(sure_absence, false)); label="Sure absence", hiparams...)
+hist!(ax3, mask(bsvaria, nodata(unsure, false)); label="Unsure", hiparams...)
+hist!(ax3, mask(bsvaria, nodata(sure_presence, false)); label="Sure presence", hiparams...)
+axislegend(ax3, nbanks=3)
+tightlimits!(ax3)
+hideydecorations!(ax3)
+hidespines!(ax3, :r)
+hidespines!(ax3, :l)
+hidespines!(ax3, :t)
+CairoMakie.save(joinpath(fpath, "conformalrange.png"), current_figure())
+current_figure()
+
+# Example with unknown areas
+q2 = median([_estimate_q(cmodel, fold...; α=0.2) for fold in kfold(cmodel; k=10)])
+Cp2, Ca2 = credibleclasses(prd, q2)
+undet = .!(Cp2 .| Ca2)
+
+# Big figure with range and uncertainty
+f = Figure(; size=(1200, 600))
+ax = Axis(f[1:2,1]; aspect=DataAspect())
+for p in polygons
+    poly!(ax, p, color=:grey95)
+    lines!(ax, p, color=:grey10)
+end
+heatmap!(ax, nodata(undet, false), colormap=[:transparent, :red])
+contour!(ax, distrib, color=:red, levels=1)
+hidespines!(ax)
+hidedecorations!(ax)
+ax2 = Axis(f[1,2], xlabel="Risk level α", ylabel="Efficiency")
+hlines!(ax2, [1.0], color=:grey50, linestyle=:dash)
+scatter!(ax2, rlevels, eff, color=:black)
+CairoMakie.save(joinpath(fpath, "undetrange.png"), current_figure())
 current_figure()
 
 # This needs additional work: coverage by area of uncertainty
