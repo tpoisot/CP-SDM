@@ -32,5 +32,4 @@ for ax in [ax_sa, ax_sp, ax_us]
     hideydecorations!(ax, label=false)
     tightlimits!(ax)
 end
-CairoMakie.save(joinpath(fpath, "noveltybins.png"), current_figure())
 current_figure()

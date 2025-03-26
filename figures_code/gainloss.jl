@@ -42,5 +42,4 @@ for ax in [ax1, ax2]
     hidedecorations!(ax)
     hidespines!(ax)
 end
-CairoMakie.save(joinpath(fpath, "rangechange.png"), current_figure())
 current_figure()

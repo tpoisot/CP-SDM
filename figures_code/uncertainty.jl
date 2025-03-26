@@ -1,5 +1,9 @@
 
 # Big figure with range and uncertainty
+
+bins = LinRange(0.0, round(quantile(bsvaria, 0.9); digits=2), 80)
+hiparams = (; bins=bins, normalization=:pdf)
+
 f = Figure(; size=(1200, 600))
 ax = Axis(f[1:2,1]; aspect=DataAspect())
 for p in polygons
@@ -12,16 +16,12 @@ heatmap!(ax, nodata(unsure_out, false), colormap=[:transparent, :orange])
 contour!(ax, distrib, color=:red, levels=1)
 hidespines!(ax)
 hidedecorations!(ax)
-ax2 = Axis(f[1,2], xlabel="Risk level α", yscale=log10, ylabel="Range (km²)")
-ylims!(ax2, 1e4, 1e6)
+ax2 = Axis(f[1,2], xlabel="Risk level α", ylabel="Range (km²)", yscale=log10)
 hlines!(ax2, [sum(mask(cs, nodata(distrib, false)))], color=:grey50, linestyle=:dash, label="SDM range")
-scatter!(ax2, rlevels, surf_presence, color=:grey10, marker=:rect, label="Sure range")
-scatter!(ax2, rlevels, surf_presence .+ surf_unsure, color=:grey40, label="Total range")
+scatter!(ax2, rlevels, clamp.(surf_presence, 1, Inf), color=:grey10, marker=:rect, label="Sure range")
+scatter!(ax2, rlevels, clamp.(surf_presence .+ surf_unsure, 1, Inf), color=:grey40, label="Total range")
 axislegend(ax2, position=:rb)
 ax3 = Axis(f[2,2], xlabel="Inter-quantile range (ensemble)")
-# Bins
-bins = LinRange(0.0, round(quantile(bsvaria, 0.9); digits=2), 80)
-hiparams = (; bins=bins, normalization=:pdf)
 hist!(ax3, mask(bsvaria, nodata(sure_absence, false)); color=(:orange, 0.7), label="Sure absence", hiparams...)
 hist!(ax3, mask(bsvaria, nodata(unsure, false)); color=(:grey80, 0.7), label="Unsure", hiparams...)
 hist!(ax3, mask(bsvaria, nodata(sure_presence, false)); color=(:forestgreen, 0.7), label="Sure presence", hiparams...)
@@ -31,5 +31,5 @@ hideydecorations!(ax3)
 hidespines!(ax3, :r)
 hidespines!(ax3, :l)
 hidespines!(ax3, :t)
-CairoMakie.save(joinpath(fpath, "conformalrange.png"), current_figure())
+ylims!(ax2, 1e4, 1e6)
 current_figure()

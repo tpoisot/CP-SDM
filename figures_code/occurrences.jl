@@ -10,5 +10,4 @@ scatter!(ax, presencelayer, color=:white, strokecolor=:forestgreen, strokewidth=
 scatter!(ax, bgpoints, color=:grey30, markersize=4)
 hidespines!(ax)
 hidedecorations!(ax)
-CairoMakie.save(joinpath(fpath, "occurrrences.png"), current_figure())
 current_figure()

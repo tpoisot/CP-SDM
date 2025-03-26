@@ -8,11 +8,11 @@ import Random
 Random.seed!(42069)
 
 # Load the functions we need here
-include("theme.jl")
-include("lib.jl")
-include("cellsize.jl")
-include("novelty.jl")
-include("data.jl")
+include("utils/theme.jl")
+include("utils/lib.jl")
+include("utils/cellsize.jl")
+include("utils/novelty.jl")
+include("utils/data.jl")
 
 # Paths to store outputs
 fpath = joinpath(@__DIR__, "figures")
@@ -25,12 +25,12 @@ if ~ispath(apath)
 end
 
 # Generate pseudo-absences
-δ = 0.8 # Tapering for distance
+δ = 1.05 # Tapering for distance
 presencelayer = mask(first(L), Occurrences(records))
 background = pseudoabsencemask(DistanceToEvent, presencelayer)
 bgpoints = backgroundpoints(nodata(background, d -> d < 10).^δ, 3sum(presencelayer))
 
-include("fig_occ.jl")
+renderfigure("occurrences")
 
 # Set up the model - logistic regression with Z-score before
 sdm = SDM(ZScore, Logistic, L, presencelayer, bgpoints)
@@ -61,7 +61,7 @@ bsvaria = predict(bsdm, L; threshold=false, consensus=iqr)
 # Prediction based on baseline data
 prd = predict(sdm, L; threshold=false)
 
-include("fig_prediction.jl")
+renderfigure("prediction")
 
 # VI
 vi = variableimportance(sdm, kfold(sdm); threshold=false)
@@ -76,7 +76,7 @@ cs = cellsize(prd)
 cmodel = deepcopy(sdm)
 
 # Sensitivity analysis for the miscoverage rate
-rlevels = LinRange(0.01, 0.2, 50)
+rlevels = LinRange(0.01, 0.2, 150)
 qs = [_estimate_q(cmodel, holdout(cmodel)...; α=u) for u in rlevels]
 surf_presence = zeros(length(qs))
 surf_unsure = zeros(length(qs))
@@ -109,14 +109,14 @@ unsure = Ca .& Cp
 unsure_in = unsure .& distrib
 unsure_out = unsure .& (.!distrib)
 
-include("fig_uncertainty.jl")
+renderfigure("uncertainty")
 
 # Example with unknown areas
 q2 = median([_estimate_q(cmodel, fold...; α=0.2) for fold in kfold(cmodel; k=10)])
 Cp2, Ca2 = credibleclasses(prd, q2)
 undet = .!(Cp2 .| Ca2)
 
-include("fig_undetrange.jl")
+renderfigure("undetrange")
 
 # Shapley values
 S = explain(sdm, L; threshold=false)
@@ -131,7 +131,7 @@ shaplim(x) = maximum(abs.(quantile(x, [0.13, 0.87]))) .* (-1, 1)
 svimp = [mean(abs.(ex)) for ex in S]
 smimp = last(findmax(svimp))
 
-include("fig_shapley.jl")
+renderfigure("shapley")
 
 # Clim change
 fprd = predict(sdm, F; threshold=false)
@@ -145,8 +145,8 @@ ft_unsure = fCa .& fCp
 ft_unsure_in = ft_unsure .& ft_distrib
 ft_unsure_out = ft_unsure .& (.!ft_distrib)
 
-include("fig_gainloss.jl")
+renderfigure("gainloss")
 
 nv = novelty(L, F, variables(sdm))
 
-include("fig_novelty.jl")
+renderfigure("novelty")

@@ -40,5 +40,4 @@ scatterlines!(ax3, surea_imp./sum(surea_imp), color=:orange, label="Sure absence
 scatterlines!(ax3, uns_imp./sum(uns_imp), color=:grey60, label="Unsure")
 scatterlines!(ax3, surep_imp./sum(surep_imp), color=:forestgreen, label="Sure presence")
 axislegend(ax3)
-CairoMakie.save(joinpath(fpath, "shapley.png"), current_figure())
 current_figure()

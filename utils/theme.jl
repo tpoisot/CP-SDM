@@ -28,3 +28,9 @@ update_theme!(;
     ),
     CairoMakie=(; px_per_unit=6),
 )
+
+function renderfigure(name)
+    include("figures_code/$(name).jl")
+    CairoMakie.save("figures/$(name).png", current_figure())
+    display(current_figure())
+end
