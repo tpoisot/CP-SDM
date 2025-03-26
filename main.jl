@@ -77,7 +77,7 @@ cs = cellsize(prd)
 cmodel = deepcopy(sdm)
 
 # Sensitivity analysis for the miscoverage rate
-rlevels = LinRange(0.01, 0.2, 100)
+rlevels = LinRange(0.01, 0.2, 250)
 qs = [_estimate_q(cmodel, holdout(cmodel)...; α=u) for u in rlevels]
 surf_presence = zeros(length(qs))
 surf_undet = zeros(length(qs))
