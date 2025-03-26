@@ -39,7 +39,7 @@ hyperparameters!(classifier(sdm), :interactions, :all) # All interactions
 hyperparameters!(classifier(sdm), :epochs, 8000) # Longer training
 
 # Folds
-folds = kfold(sdm; k=15)
+folds = kfold(sdm)
 
 # Train the model with optimal set of variables, using forward selection and MCC
 # as the measure
@@ -77,9 +77,10 @@ cs = cellsize(prd)
 cmodel = deepcopy(sdm)
 
 # Sensitivity analysis for the miscoverage rate
-rlevels = LinRange(0.01, 0.2, 150)
+rlevels = LinRange(0.01, 0.2, 100)
 qs = [_estimate_q(cmodel, holdout(cmodel)...; α=u) for u in rlevels]
 surf_presence = zeros(length(qs))
+surf_undet = zeros(length(qs))
 surf_unsure = zeros(length(qs))
 surf_unsure_presence = zeros(length(qs))
 surf_unsure_absence = zeros(length(qs))
@@ -89,11 +90,13 @@ eff = [mean(length.(credibleclasses.(𝐏, q))) for q in qs]
 
 for i in eachindex(qs)
     Cp, Ca = credibleclasses(prd, qs[i])
+    undet = .!(Cp .| Ca)
     sure_presence = Cp .& (.!Ca)
     unsure = Ca .& Cp
     unsure_presence = unsure .& distrib
     unsure_absence = unsure .& (.!distrib)
     surf_presence[i] = sum(mask(cs, nodata(sure_presence, false)))
+    surf_undet[i] = sum(mask(cs, nodata(undet, false)))
     surf_unsure[i] = sum(mask(cs, nodata(unsure, false)))
     surf_unsure_presence[i] = sum(mask(cs, nodata(unsure_presence, false)))
     surf_unsure_absence[i] = sum(mask(cs, nodata(unsure_absence, false)))
