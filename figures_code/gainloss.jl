@@ -9,10 +9,8 @@ for ax in [ax1, ax2]
         lines!(ax, p, color=:grey10)
     end
 end
-heatmap!(ax1, nodata(ft_sure_presence, false), colormap=[:transparent, :black])
-heatmap!(ax1, nodata(ft_unsure_in, false), colormap=[:transparent, :forestgreen])
-heatmap!(ax1, nodata(ft_unsure_out, false), colormap=[:transparent, :orange])
-contour!(ax1, ft_distrib, color=:red, levels=1)
+heatmap!(ax1, nodata(ft_sure_presence, false), colormap=[:forestgreen])
+heatmap!(ax1, nodata(ft_unsure, false), colormap=[:grey70])
 cmap = [colorant"#fdb863", colorant"#e66101", colorant"#020202",colorant"#5e3c99", colorant"#b2abd2"]
 heatmap!(ax2, nodata(sure_presence .& ft_sure_presence,  false), colormap=[cmap[3]])
 heatmap!(ax2, nodata(sure_absence .& ft_unsure, false), colormap=[cmap[5]])
@@ -42,4 +40,5 @@ for ax in [ax1, ax2]
     hidedecorations!(ax)
     hidespines!(ax)
 end
+contour!(ax1, ft_distrib, color=:red, levels=1)
 current_figure()

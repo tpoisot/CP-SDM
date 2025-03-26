@@ -15,7 +15,7 @@ Colorbar(
     vertical = true,
 )
 ax2 = Axis(f[1,2]; aspect=DataAspect())
-hm2 = heatmap!(ax2, bsvaria, colormap=:linear_bgy_10_95_c74_n256, colorscale=log10)
+hm2 = heatmap!(ax2, bsvaria, colormap=:Greys, colorscale=log10)
 Colorbar(
     f[1, 2],
     hm2;
@@ -33,7 +33,7 @@ for ax in [ax1, ax2]
     hidespines!(ax)
     hidedecorations!(ax)
     for p in polygons
-        lines!(ax, p, color=:grey50)
+        lines!(ax, p, color=:grey10)
     end
     contour!(ax, distrib, color=:red, levels=1)
 end

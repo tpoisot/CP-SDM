@@ -2,14 +2,14 @@
 # Novelty map + histograms
 f = Figure(; size=(1200, 600))
 ax = Axis(f[1:3,1]; aspect=DataAspect())
-hm = heatmap!(ax, (nv .- mean(nv))./std(nv), colormap=:broc, colorrange=shaplim((nv .- mean(nv))./std(nv)))
+hm = heatmap!(ax, nv, colormap=:linear_wcmr_100_45_c42_n256, colorscale=sqrt)
 for p in polygons
     lines!(ax, p, color=:grey10, linewidth=1)
 end
 Colorbar(
     f[1:3, 1],
     hm;
-    label = "Relative climate novelty",
+    label = "Climatic novelty",
     alignmode = Inside(),
     height = Relative(0.4),
     flipaxis = false,

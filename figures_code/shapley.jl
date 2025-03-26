@@ -1,3 +1,5 @@
+# Varord
+vord = sortperm(svimp; rev=true)
 
 # Map with Shapley and contributions
 f = Figure(; size=(1200, 600))
@@ -31,13 +33,16 @@ hideydecorations!(ax2)
 hidespines!(ax2, :r)
 hidespines!(ax2, :l)
 hidespines!(ax2, :t)
-ax3 = Axis(f[2,2], xlabel="Variable", ylabel="Relative importance")
+
+# Ticks
+vnames = layers(provider)[variables(sdm)[vord]]
+ax3 = Axis(f[2,2], ylabel="Relative importance", xticks=(1:length(vord), vnames))
 surea_imp = [mean(abs.(mask(ex, nodata(sure_absence, false)))) for ex in S]
 uns_imp = [mean(abs.(mask(ex, nodata(unsure, false)))) for ex in S]
 surep_imp = [mean(abs.(mask(ex, nodata(sure_presence, false)))) for ex in S]
-scatterlines!(ax3, svimp./sum(svimp), color=:black, linewidth=1, linestyle=:dot)
-scatterlines!(ax3, surea_imp./sum(surea_imp), color=:orange, label="Sure absence")
-scatterlines!(ax3, uns_imp./sum(uns_imp), color=:grey60, label="Unsure")
-scatterlines!(ax3, surep_imp./sum(surep_imp), color=:forestgreen, label="Sure presence")
+scatterlines!(ax3, svimp[vord]./sum(svimp), color=:black, linewidth=1, linestyle=:dot)
+scatterlines!(ax3, surea_imp[vord]./sum(surea_imp), color=:orange, label="Sure absence")
+scatterlines!(ax3, uns_imp[vord]./sum(uns_imp), color=:grey60, label="Unsure")
+scatterlines!(ax3, surep_imp[vord]./sum(surep_imp), color=:forestgreen, label="Sure presence")
 axislegend(ax3)
 current_figure()

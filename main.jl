@@ -36,16 +36,17 @@ renderfigure("occurrences")
 sdm = SDM(ZScore, Logistic, L, presencelayer, bgpoints)
 hyperparameters!(classifier(sdm), :η, 1e-3) # Slow descent
 hyperparameters!(classifier(sdm), :interactions, :all) # All interactions
-hyperparameters!(classifier(sdm), :epochs, 10_000) # Longer training
+hyperparameters!(classifier(sdm), :epochs, 8000) # Longer training
 
 # Folds
-folds = kfold(sdm)
+folds = kfold(sdm; k=15)
 
 # Train the model with optimal set of variables, using forward selection and MCC
 # as the measure
 variables!(sdm, ForwardSelection, folds; verbose=true)
 
 # Measure of model performance
+# Make a PrettyTable for output
 ConfusionMatrix(sdm) |> mcc
 
 # Range

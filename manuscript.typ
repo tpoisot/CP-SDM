@@ -19,33 +19,33 @@ One of the reasons why CP is particularly promising for uncertainty quantificati
 
 Using occurrence data about an emblematic North American cryptid, I show how predictions under CP (i) identify areas where the species range is uncertain, (ii) estimate uncertainty differently from bootstraping methods, (iii) can be explained using Shapley values analysis, and (iv) quantify the accumulated uncertainty when transferring the SDM to future conditions. I conclude by highlighting ways in which using CP can both simplify the process of training SDMs, and provide information that make their discussion and analysis more informative.
 
-= Dataset
+= Methods
 
-== Occurrence data
+== Data
+
+=== Occurrence data
 
 The occurrence data used in this article are geo-referenced observations of the Sasquatch #cite(<Lozier2009>). Although these observations are likely to be mis-categorized American black bears #cite(<Foxon2024>), they nevertheless share many features of the data that are used to train SDMs: high auto-correlation, uneven sampling effort, and clear association with several bioclimatic variables that is robust enough to train a predictive model. The recorded locations, as well a background points, are presented in #ref(<occurrences>).
 
-== Pseudo-absences generation
+=== Pseudo-absences generation
 
 The dataset of observations is composed only of presences. In order to establish a baseline of absences to train a binary classifier, there is a need to generate a number of pseudo-absences, which simulates locations at which the species, if not absent, has not been observed. In order to do so, the presence data were first spatially thinned to be limited to one for each cell, at a 5.0 minutes of arc resolution. Cells that had no observation were potential candidates for a pseudo-absence, and were further selected by drawing a number of them, without replacement, where the probability of inclusion in the sample was proportional to $h _ "min" ^(-1)$, where $h _ "min"$ is the Haversine (great arc) distance to the nearest cell with an observation, measured in kilometers. In other words, cells that were close to an observation were unlikely to be included, and cells that were further away were more likely to be so. To avoid sampling pseudo-absences too close to presences, the pixels less than 10 kilometers away from known observations were excluded from the background data.
 
 The number of pseudo-absences was arbitrarily set to two times the number of presences. Although #cite(<Barbet-Massin2012>, form: "prose") recommend to use the same number of presences and pseudo-absences for classifiers, using an imbalanced dataset is not a problem: stratified k-folds cross-validation is perfectly able to handle the moderate class imbalance we introduce #cite(<Szeghalmy2023>), and the model performance (as will be established in a later section) is sufficient. Moreover, most real-world applications of classification will have to deal with problems with class imbalance (this is particularly likely to be true of SDM application from sampling data, where presences may be the minority of outcomes); it is therefore important to ensure that we do not establish a testing scenario that is too optimistic about the prevalence of presences. In all cases, class imbalances is a feature of data that must be dealt with in order to get the more predictive models #cite(<Benkendorf2023>).
 
 #figure(
-  image("figures/occurrences.png", width: 80%),
+  image("figures/occurrences.png", width: 50%),
   caption: [Overview of the occurrence data (green circles) and the pseudo-absences (grey points) for the states of, clockwise from the bottom, California, Oregon, Washington, Idaho, and Nevada. The underlying predictor data are at a resolution of 2.5 minutes of arc, and represented in the World Geodetic System 1984 CRS (EPSG 4326).],
   placement: auto
 ) <occurrences>
 
-== Bioclimatic data
+=== Bioclimatic data
 
 The model was trained, validated, and applied on the 19 WorldClim2 BIOCLIM variables #cite(<Fick2017>), at a spatial resolution of 2.5 minutes of arc. Preliminary analyses using 0.5, 2.5, 5, and 10 minutes of arc show that the qualitative results presented hold. For the projection of the model under climate change, I only report the future data under the SSP370 scenario ("business as usual"), for the MRI ESM2-0 GCM, over the period 2081-2100.
 
 == Species distribution model
 
 All analyses are conducted using the `SpeciesDistributionToolkit` package #cite(<Poisot2025>) for _Julia_ 1.11.
-
-= Training of the non-conformal model
 
 Conformal Prediction requires a well-trained model to serve as a baseline before it can be applied. For this reason, in this first section, I will go into some detail into the training and validation of a suitable model, and further derive a first approximation of its uncertainty by relying on bagging to create a homogeneous ensemble. The model we use is a logistic regression, with interactions terms up to a maximum degree of two.
 
@@ -59,31 +59,37 @@ We optimize the initial model by (i) iteratively forward selecting the best set 
 
 For all steps of model training and validation, the identity of instances composing the different folds remains fixed. This ensure that the changes in MCC are only due to the addition of the variable, and not to the random sampling of a training/validation set with different properties. Although some authors encourage the use of spatially-stratified cross-validation #cite(<Soley-Guardia2024>), this is not a desirable strategy for this use-case. The area in which the predictions will be made is entirely delimited by the bounding box of observed presences, and there is therefore no risk of covariate shift when shifting from validation to prediction (outside of the situation of temporal transfer of the SDM). Because BRTs establish their baseline prediction (the first tree) as the prevalence of presences in the training dataset #cite(<Valavi2021>), we used stratified ten-fold cross-validation, in which the ten folds all have a the same number of instances, with correct representation of the relative frequency of presences and absences.
 
-== Variable selection
+=== Variable selection
 
 The predictors included in the model have been decided through the use of forward selection. This is an important step in order to perform dimensionality reduction (which generally increases the predictive accuracy), but also to ensure that the set of retained variables is reduced enough that it can be interpreted. Variables where retained as part of the final set of predictors if adding them increased the MCC for the model once retrained with this new variable.
 
 An initial attempt to cross-validate the model using all variables resulted in a MCC that was close to the model using an optimal set of predictors. Nevertheless, minimizing the number of inputs to a model is generally a good idea. First, it makes the assessment of the contribution of variables far more efficient and informative; second, it decreases the risk of covariate shift when predicting (by lowering the number of covariates); finally, it makes the training more efficient, by having less variables to split during the training of the BRTs (while maintaining the number of trees, leading to a better fit).
 
-== Thresholding
+=== Thresholding
 
 One of the most efficient ways to increase the performance of binary classifiers is to change the decision rule leading to a positive (here, presence) prediction, so that presences are assigned when $p_+ >= tau$ – a process known as moving threshold classification #cite(<Liu2016>) #cite(<Liu2013>). The value of $tau$ is an hyper-parameter of the model, which is chosen to maximize the value of a measure of model performance (here the MCC) when evaluated over many different values. In this instance, we optimized the value of $tau$ by cross-validation 30 meta-models (models that only differ in their hyper-parameters), with different values chosen through Latin hypercube sampling #cite(<McKay1979>). The value of $tau$ that maximizes the MCC was selected as the optimal threshold for the BRT.
 
-== Estimation of bootstrap variability
+=== Estimation of bootstrap variability
 
 Bagging (bootstrap aggregating) is often used as a measure of uncertainty to the underlying data when training SDMs #cite(<Beale2012>). When performing bagging, the model is trained on samples drawn with replacement from the training set (which leaves out approx. 37% of the dataset). Trees are then evaluated on samples that were not used as part of their training, usually using cross-validation #cite(<Bylander2002>) or measures of the out-of-bag error #cite(<Janitza2018>). Although ensemble models *can* get to a better predictive performance compared to single models #cite(<Drake2014>), this is not a guarantee (and depends on the structure of the bias/variance trade-off for the specific model and its training set). The many models trained on the bagging dataset form an homogeneous ensemble, which is to say a set of models that share the same algorithm and hyper-parameters, and only make different predictions as the result of having been trained on different subsets of the full training set.
 
 Measures of whether the different models composing the homogeneous ensemble agree can provide a measure of the effect of data and parameter uncertainty #cite(<Petropoulos2018>), or what #cite(<Davies2023>, form: "prose") termed the "SDM uncertainty". The best model identified after thresholding was evaluated on a hundred bootstrap samples, yielding an homogeneous ensemble model from which we estimate bootstrap variability #cite(<Chen2019>). Because the model is kept constant in this analysis, the measure of variability we will derive from the ensemble model is an estimate of how sensitive the estimation of the model parameters is to small perturbations (specifically spatially homogeneous under-sampling) to the training data.
 
+= Results
+
 == Performance of the baseline model
 
 The optimal threshold found through Latin hypercube sampling is $tau approx 0.35$; although this is quite far away from the untuned threshold of $1/2$, the quantitative effect on the behavior of the model, *i.e.* the effect on the predictions as measured by the MCC, is quite small. The MCC after the threshold optimization is only increased by 0.01, and the MCC of the ensemble model is lower than the thresholded BRT (though not by a lot, and not enough to preclude the use of this model to evaluate uncertainty). The prediction made by the BRT, as well as the range at the optimal threshold, are given in *TK*.
 
+#figure(
+  image("figures/prediction.png", width: 100%),
+  caption: [Overview of the occurrence data (green circles) and the pseudo-absences (grey points) for the states of, clockwise from the bottom, California, Oregon, Washington, Idaho, and Nevada. The underlying predictor data are at a resolution of 2.5 minutes of arc, and represented in the World Geodetic System 1984 CRS (EPSG 4326).],
+  placement: auto
+) <predictions>
+
 *LEG* Comparison of the performance of the BRT (trained and cross-validated on the same folds) before and after optimizing the threshold. The out-of-bag performance of the ensemble model (trained on 100 bootstrap samples) is also reported. All three models are roughly equivalent in terms of their predictive ability. The value considered ideal for each measure is bolded. The MCC is used as the criteria to evaluate the best model for variable selection and thresholding.
 
-= Training of the conformal model
-
-The trained model from *TK* can be used for conformal prediction. Conformal prediction differs from the regular prediction in that it creates sets (or, for quantitative responses, intervals) given an input value. Given the observed quantiles of the model output on the validation data, these sets are obtained through a simple calibration step. Therefore, CP can be applied on an already trained model, and is agnostic to the process through which this model is trained. In this section, I highlight two important features of CP: the notion of *credible sets*, and the *coverage* statistic, which is a measure of tolerance to error. An in-depth introduction to CP is found in #cite(<Angelopoulos2023a>, form: "prose").
+The trained model from #ref(<predictions>) can be used for conformal prediction. Conformal prediction differs from the regular prediction in that it creates sets (or, for quantitative responses, intervals) given an input value. Given the observed quantiles of the model output on the validation data, these sets are obtained through a simple calibration step. Therefore, CP can be applied on an already trained model, and is agnostic to the process through which this model is trained. In this section, I highlight two important features of CP: the notion of _credible sets_, and the _coverage_ statistic, which is a measure of tolerance to error. An in-depth introduction to CP is found in #cite(<Angelopoulos2023a>, form: "prose").
 
 == Understanding conformal predictions
 
@@ -91,10 +97,16 @@ By contrast to the non-conformal SDM, the conformal classifier returns, for an i
 
 Second, the credible set can have a single outcome in it, either . In this case, one of the outcomes is credible, but the other is not. Finally, there is a chance that $C = emptyset$, in which case the conformal model has not enough evidence to include *either* outcome credibly.
 
-
 These situations correspond to four different outcomes in terms of the SDM certainty about the distribution of the species. The most intuitive situation is $C = "true"$ or $C = "false"$, in which case the conformal model predicts that the absence (resp. presence) of the species is *not* a credible outcome for the environmental conditions given as an input. We term these predictions "sure presences" and "sure absences", as *for a given value of the coverage statistic* $alpha$, there is no reason to expect that the prediction is uncertain. The second situation, $C = "true" "false"$, corresponds to inputs for which the presence and the absence of the species are credible (they may not be *equally* credible, as the score for one may be larger than the score for the other), and we term these predictions "unsure". The final situation corresponds to $C = emptyset$, which means that neither absence or presence can be credibly predicted – given the training data (and the distribution of presences and absences), the model is not able to make a prediction for this input. The multiplication of such predictions is most likely a strong sign that the risk level is too high (the confidence interval is too broad) for the training data given to the conformal model.
 
 To summarize, the output of the conformal classifier is, in a sense, a point-specific stand-in for the application of a threshold. A location is defined as included in the range is the positive outcome is included within the credible set returned by the conformal classifier, and as excluded from the range when it is not. Because the conformal classifier can identify that both outcomes are credible based on the training data (while giving them different weights), predictions in which both the positive and negative outcomes are included in the credible set can be seen as "uncertain" at this given risk level. How frequently a specific prediction is uncertain is termed the inefficiency of the classifier, which is defined as the average cardinality of all credible sets. The inefficiency is bounded upwards by the number of classes (two for binary classification); when the inefficiency is $approx 1$, the conformal classifier behaves (essentially) as a deterministic classifier, by returning a single class for each instance. An inefficiency close to unity is not desirable: smaller sets can hide our actual uncertainty #cite(<Sadinle2018>). Because the conformal models wraps the BRT model, we can further divide the "unsure" predictions as a function of whether they would be within the range as predicted by the BRT (*i.e.* $C = "rephrase"$), which we call "unsure presences"; the other unsure predictions are referred to as "unsure absences".
+
+
+#figure(
+  image("figures/uncertainty.png", width: 100%),
+  caption: [Overview of the occurrence data (green circles) and the pseudo-absences (grey points) for the states of, clockwise from the bottom, California, Oregon, Washington, Idaho, and Nevada. The underlying predictor data are at a resolution of 2.5 minutes of arc, and represented in the World Geodetic System 1984 CRS (EPSG 4326).],
+  placement: auto
+) <uncertainty>
 
 == Understanding the effect of the coverage level
 
@@ -107,11 +119,17 @@ In *TK* we show how changing the risk level ($alpha$) leads to different estimat
 
 In the rest of this analysis, we set $alpha = 0.05$. As noted by #cite(<Angelopoulos2023a>, form: "prose"), this corresponds to estimating whether a specific prediction falls within, or outside of, the 95% confidence interval across all predictions, which is a convenient callback to frequentist statistics' usual risk tolerance. From *TK*, this level of risk would represent an inefficiency of about 1.2, meaning that 20% of the predictions would have both presence and absence in their credible set. Note that even when setting the risk at $alpha = 0.0$, the inefficiency does not climb up to 2 (the theoretical maximum); there would be a number of pixels (about 15%) that only have either presence or absence in their credible set. Recall that the CP credible sets are estimated based on the model output, and therefore even when aiming for full coverage, there are non-ambiguous combinations of environmental predictors.
 
-= Analysis of the predicted species range
+#figure(
+  image("figures/undetrange.png", width: 100%),
+  caption: [Overview of the occurrence data (green circles) and the pseudo-absences (grey points) for the states of, clockwise from the bottom, California, Oregon, Washington, Idaho, and Nevada. The underlying predictor data are at a resolution of 2.5 minutes of arc, and represented in the World Geodetic System 1984 CRS (EPSG 4326).],
+  placement: auto
+) <undetrange>
+
+== Analysis of the predicted species range
 
 Before discussing the spatial output of running the conformal model, it is worth considering why the thresholding step applied in *TK* is not really providing us with a set of certain presences and absences. When optimizing the threshold $tau$ above which a prediction $p_+$ from the non-conformal model is determined to be a presence, we establish a sort of certain presences and certain absences; indeed, the space covered by positive predictions is usually interpreted as the (potential) distribution of the species. But this prediction conveys a false sense of certainty, that has to do with the very nature of the threshold we optimize. By definition, the threshold is the value that finds the best balance between the false/true positive/negative cases on the validation data; this is in fact why the optimal threshold is the point closest to the corners of the ROC and PR curves indicating a perfect classifier #cite(<Balayla2020>). When a prediction $p_+$ gets closer to the threshold, a small perturbation to the environmental conditions locally could bring it on the other side of the threshold, and therefore flip the predicted class using the non-conformal classifier. Around the threshold is where we expect uncertainty to be the greatest.
 
-To bring these considerations into a spatial context: we expect the areas where the score for the present class are closer to the threshold (the limits of the predicted range of the species) to be the most uncertain. Importantly, this is true *both* for areas that are inside the range (for which $p_+$ is just above the threshold) and for areas that are outside of it (for which $p_+$ is just below the threshold). CP is perfectly suited to solving this issue, by identifying the areas where one class is predicted, but the other class is also credible. In this section, we will project the areas with uncertain predictions, and compare the uncertainty quantified by the conformal model to the uncertainty derived from the ensemble model.
+To bring these considerations into a spatial context: we expect the areas where the score for the present class are closer to the threshold (the limits of the predicted range of the species) to be the most uncertain. Importantly, this is true _both_ for areas that are inside the range (for which $p_+$ is just above the threshold) and for areas that are outside of it (for which $p_+$ is just below the threshold). CP is perfectly suited to solving this issue, by identifying the areas where one class is predicted, but the other class is also credible. In this section, we will project the areas with uncertain predictions, and compare the uncertainty quantified by the conformal model to the uncertainty derived from the ensemble model.
 
 == Identification of areas with uncertainty
 
@@ -129,6 +147,12 @@ Nevertheless, CP captures some of the underlying model uncertainty: in *TK*, pre
 
 These results can be better understood by contrasting what "uncertain" means in the context of CP, and how it differs from the uncertainty in the ensemble model. The uncertainty derived from the ensemble model represents whether many models trained on small perturbations of the full training dataset would agree on a specific prediction task, represented by an array of environmental predictors. Therefore, the uncertainty from the ensemble originates in the estimation of the parameters, and its sensitivity to being able to access the full information within the training data. Uncertainty in the conformal classifier is coming from comparing the prediction to all other predictions under an estimation of the distributions for the conditions leading to the prediction of the presence (or absence) outcome. Therefore, the uncertainty from the conformal predictors accounts for all the predictions the model can make, and accounts for the variability *across* predictions within a fully accessible dataset.
 
+#figure(
+  image("figures/shapley.png", width: 100%),
+  caption: [Overview of the occurrence data (green circles) and the pseudo-absences (grey points) for the states of, clockwise from the bottom, California, Oregon, Washington, Idaho, and Nevada. The underlying predictor data are at a resolution of 2.5 minutes of arc, and represented in the World Geodetic System 1984 CRS (EPSG 4326).],
+  placement: auto
+) <shapley>
+
 == Model explanation
 
 In this section, we perform an analysis of Shapley values of the conformal predictor, in order to (i) assess the importance of variables and (ii) provide explainable results about the relationships between predictors and response. Although initially a game-theoretic concept, we rely on the common Monte-Carlo approximation #cite(<Roth1988>) #cite(<Touati2021>). Monte-Carlo Shapley values represent, for each prediction, how much the $i$th variable contributed to moving the prediction away from the average prediction. The Shapley value associated to variable $i$ is $phi_i in [-1,1]$, which measures how much this variable modified the *average* prediction for this class. Shapley values have a number of desirable properties regarding the explanation of prediction of responses for environmental studies #cite(<Wadoux2023>), including their additivity: for any given prediction, $p = bar p + sum_i^"variables" phi_i$. Because of this additive property, the importance of variables across many predictions is usually measured as the average of $| phi |$, where both positive (the class is more likely) and negative (the class is less likely) are counted. This measure of variable importance represents the relative impact that each variable had on the process of moving all predictions away from the average prediction. Because Shapley values are both additive and independent, they can be measured and aggregated for any arbitrary stratification of the data (which allows reporting them conditional on the uncertainty status of the prediction).
@@ -138,6 +162,13 @@ As the predictions of the conformal model can be split by whether they are certa
 We find that the certain absences follow the same variable importance as the full prediction (which is expected as the range of this species is a small part of the total study area, therefore absences contribute disproportionately to the total predictions). None of the other classes did so, with, notably, the uncertain presences and absences having markedly different variable importance when compared to the certain prediction *and* to one another. For example, the BIO10 variable (mean temperature of warmest quarter) was much more important for predictions classified as uncertain absences.
 
 *LEG* Relative variable importance (measured as the average absolute value of all Shapley values) to explain the conformal prediction ($alpha = 0.05$) for the entire range (left), for the part of the range where absence is not part of the credible set (middle), and for the part of the range where it is (right). For the last two panels, the dots associated to each variable are the importance of this variable across the entire range. Note that the importance of variables is not accounting for the areas where the absence of the species is certain (*i.e.* presence is not part of the credible set). The difference in relative variable importance in the certain/uncertain area suggests that the conformal model is picking up on different relationships between predictors and response in areas of high *vs.* low certainty.
+
+
+#figure(
+  image("figures/gainloss.png", width: 100%),
+  caption: [Overview of the occurrence data (green circles) and the pseudo-absences (grey points) for the states of, clockwise from the bottom, California, Oregon, Washington, Idaho, and Nevada. The underlying predictor data are at a resolution of 2.5 minutes of arc, and represented in the World Geodetic System 1984 CRS (EPSG 4326).],
+  placement: auto
+) <gainloss>
 
 == Model projection
 
@@ -152,6 +183,13 @@ Using the data from the CanESM5 model #cite(<Swart2019>) under the SSP370 scenar
 | *(difference)*   | 4.07%        | 11.09% | 7.01%         |
 
 These results show that *on average*, the areas with climatic novelty had more uncertain outcomes, which is in line with ecological expectations.
+
+
+#figure(
+  image("figures/novelty.png", width: 100%),
+  caption: [Overview of the occurrence data (green circles) and the pseudo-absences (grey points) for the states of, clockwise from the bottom, California, Oregon, Washington, Idaho, and Nevada. The underlying predictor data are at a resolution of 2.5 minutes of arc, and represented in the World Geodetic System 1984 CRS (EPSG 4326).],
+  placement: auto
+) <novelty>
 
 = Conclusion
 
