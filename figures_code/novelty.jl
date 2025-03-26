@@ -32,4 +32,10 @@ for ax in [ax_sa, ax_sp, ax_us]
     hideydecorations!(ax, label=false)
     tightlimits!(ax)
 end
+
+Label(f[1:3, 1], "A", alignmode=Inside(), tellwidth=false, tellheight=false, valign=:top, halign=:left, fontsize=30)
+Label(f[1, 2], "B ", alignmode=Inside(), tellwidth=false, tellheight=false, valign=:top, halign=:right, fontsize=30)
+Label(f[2, 2], "C ", alignmode=Inside(), tellwidth=false, tellheight=false, valign=:top, halign=:right, fontsize=30)
+Label(f[3, 2], "D ", alignmode=Inside(), tellwidth=false, tellheight=false, valign=:top, halign=:right, fontsize=30)
+
 current_figure()

@@ -19,4 +19,7 @@ ax3 = Axis(f[2,2], xlabel="Risk level α", ylabel="Undetermined range (km²)", y
 surf_undet[findall(iszero, surf_undet)] .= NaN
 scatter!(ax3, rlevels, surf_undet, color=:black)
 xlims!(ax3, extrema(rlevels))
+Label(f[1:2, 1], "A", alignmode=Inside(), tellwidth=false, tellheight=false, valign=:top, halign=:left, fontsize=30)
+Label(f[1, 2], "B ", alignmode=Inside(), tellwidth=false, tellheight=false, valign=:top, halign=:right, fontsize=30)
+Label(f[2, 2], "C ", alignmode=Inside(), tellwidth=false, tellheight=false, valign=:bottom, halign=:right, fontsize=30)
 current_figure()

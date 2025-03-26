@@ -30,8 +30,6 @@ presencelayer = mask(first(L), Occurrences(records))
 background = pseudoabsencemask(DistanceToEvent, presencelayer)
 bgpoints = backgroundpoints(nodata(background, d -> d < 10).^δ, 3sum(presencelayer))
 
-renderfigure("occurrences")
-
 # Set up the model - logistic regression with Z-score before
 sdm = SDM(ZScore, Logistic, L, presencelayer, bgpoints)
 hyperparameters!(classifier(sdm), :η, 1e-3) # Slow descent
@@ -44,6 +42,13 @@ folds = kfold(sdm)
 # Train the model with optimal set of variables, using forward selection and MCC
 # as the measure
 variables!(sdm, ForwardSelection, folds; verbose=true)
+
+
+# VI
+vi = variableimportance(sdm, kfold(sdm); threshold=false)
+miv = variables(sdm)[last(findmax(vi))]
+
+renderfigure("occurrences")
 
 # Measure of model performance
 # Make a PrettyTable for output
@@ -63,14 +68,6 @@ bsvaria = predict(bsdm, L; threshold=false, consensus=iqr)
 prd = predict(sdm, L; threshold=false)
 
 renderfigure("prediction")
-
-# VI
-vi = variableimportance(sdm, kfold(sdm); threshold=false)
-miv = variables(sdm)[last(findmax(vi))]
-
-scatter(features(sdm, miv), predict(sdm; threshold=false))
-hlines!([threshold(sdm)], color=:red)
-current_figure()
 
 cs = cellsize(prd)
 

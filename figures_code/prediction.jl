@@ -37,4 +37,7 @@ for ax in [ax1, ax2]
     end
     contour!(ax, distrib, color=:red, levels=1)
 end
+
+Label(f[1, 1], "A", alignmode=Inside(), tellwidth=false, tellheight=false, valign=:top, halign=:left, fontsize=30)
+Label(f[1, 2], "B", alignmode=Inside(), tellwidth=false, tellheight=false, valign=:top, halign=:left, fontsize=30)
 current_figure()

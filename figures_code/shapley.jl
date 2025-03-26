@@ -45,4 +45,9 @@ scatterlines!(ax3, surea_imp[vord]./sum(surea_imp), color=:orange, label="Sure a
 scatterlines!(ax3, uns_imp[vord]./sum(uns_imp), color=:grey60, label="Unsure")
 scatterlines!(ax3, surep_imp[vord]./sum(surep_imp), color=:forestgreen, label="Sure presence")
 axislegend(ax3)
+
+Label(f[1:2, 1], "A", alignmode=Inside(), tellwidth=false, tellheight=false, valign=:top, halign=:left, fontsize=30)
+Label(f[1, 2], "B", alignmode=Inside(), tellwidth=false, tellheight=false, valign=:top, halign=:left, fontsize=30)
+Label(f[2, 2], " C", alignmode=Inside(), tellwidth=false, tellheight=false, valign=:bottom, halign=:left, fontsize=30)
+
 current_figure()
