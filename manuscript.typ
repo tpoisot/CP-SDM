@@ -5,6 +5,37 @@
 #set math.equation(numbering: "(1)")
 #show table.cell.where(y: 0): strong
 
+#show figure.caption: it => {
+  set align(left)
+  set par(leading: 0.55em, hanging-indent: 0pt, justify: false)
+  text(10pt, it)
+}
+
+#set par(leading: 1.6em, spacing: 2.2em, first-line-indent: 0pt)
+#show heading.where(level: 1): set text(14pt, rgb("#114f54"), font: "Inter", weight: "medium")
+#show heading.where(level: 2): set text(13pt, rgb("#2e5385"), font: "Inter", weight: "regular", style: "italic")
+#show heading.where(level: 1): it => block(width: 100%)[
+    #v(3.2em)
+    #block(it.body)
+    #v(1em)
+  ]
+#show heading.where(level: 2): it => block(width: 100%)[
+    #v(2.1em)
+    #block(it.body)
+    #v(1em)
+  ]
+#show heading.where(level: 3): it => block(width: 100%)[
+    #v(1.2em)
+    #block(it.body)
+    #v(1.2em)
+  ]
+
+#text(18pt, rgb("#1d8265"), weight: "light",  font: "Inter", "Conformal Prediction quantifies the uncertainty of Species Distribution Models")
+#v(4em, weak: true)
+Timothée Poisot --- Département de Sciences Biologiques, Université de Montréal, Montréal QC, Canada
+`timothee.poisot@umontreal.ca`
+#v(10em, weak: true)
+
 *Abstract*: Providing accurate estimates of uncertainty is key for the analysis, adoption, and interpretation of species distribution models. In this manuscript, through the analysis of data from an emblematic North American cryptid, I illustrate how Conformal Prediction allows fast and informative uncertainty quantification. I discuss how the conformal predictions can be used to gain more knowledge about the importance of variables in driving presences and absences, and how they help assess the importance of climatic novelty when projecting the models under future climate change scenarios.
 
 = Introduction
@@ -44,6 +75,8 @@ The number of pseudo-absences was arbitrarily set to two times the number of pre
 === Bioclimatic data
 
 The model was trained, validated, and applied on the 19 WorldClim2 BIOCLIM variables #cite(<Fick2017>), at a spatial resolution of 2.5 minutes of arc. Preliminary analyses using 0.5, 2.5, 5, and 10 minutes of arc show that the qualitative results presented hold. For the projection of the model under climate change, I only report the future data under the SSP370 scenario ("business as usual"), for the MRI ESM2-0 GCM, over the period 2081-2100.
+
+The climatic novelty of the baseline _v._ future data is estimated through the Euclidean distance #cite(<Fitzpatrick2018>), specifically by assigning as a novelty score for each pixel in the future the distance to its closest baseline analogue. This novelty is measured on de-meaned predictors with unit variance.
 
 == Species distribution model
 
@@ -172,7 +205,7 @@ In #ref(<undetrange>, supplement: "fig.")A, we see that above $alpha approx 0.1$
 
 #figure(
   image("figures/undetrange.png", width: 100%),
-  caption: [Overview of the occurrence data (green circles) and the pseudo-absences (grey points) for the states of, clockwise from the bottom, California, Oregon, Washington, Idaho, and Nevada. The underlying predictor data are at a resolution of 2.5 minutes of arc, and represented in the World Geodetic System 1984 CRS (EPSG 4326).],
+  caption: [Inefficiency (average number of classes in the credible set) for various levels of $alpha$ (A); above $alpha approx 0.1$, the conformal prediction starts returning empty credible sets. This results in an increase in the spatial area for which no prediction can be made (B). For $alpha = 0.2$, these areas are distributed around the limit of the predicted range, showing that the areas in which uncertainty quantification are most important cannot be predicted.],
   placement: auto
 ) <undetrange>
 
@@ -184,7 +217,7 @@ As the predictions of the conformal model can be split by whether they are certa
 
 #figure(
   image("figures/shapley.png", width: 100%),
-  caption: [Overview of the occurrence data (green circles) and the pseudo-absences (grey points) for the states of, clockwise from the bottom, California, Oregon, Washington, Idaho, and Nevada. The underlying predictor data are at a resolution of 2.5 minutes of arc, and represented in the World Geodetic System 1984 CRS (EPSG 4326).],
+  caption: [Overview of the effect of the most important predictor (A); areas with high values indicate that the value of BIO13 at this location make the presence of the species more likely. These values are associated to different prediction certainties (B), with predictions within the unsure range being centered around 0 (_i.e._ not moving the needle on the average prediction one way or another). Nevertheless, the contribution of the variables in different uncertainty categories are different (C), suggesting that Shapley values can help create explanations of where uncertainty originates.],
   placement: auto
 ) <shapley>
 
@@ -206,32 +239,22 @@ By applying these rules on the predicted changes in presence/absence status, we 
 
 == Conformal prediction and climatic novelty
 
-#cite(<Zurell2012>) highlight the importance of fully considering uncertainty when transferring the model to novel climate data: there is a chance that the future climate conditions will not have occurred in the training dataset, and therefore our confidence in the model outcome may be lowered. This covariate shift is well documented to decrease the performance of models #cite(<Mesgaran2014>), and CP offers an opportunity to quantify this phenomenon.
+#cite(<Zurell2012>, form: "prose") highlight the importance of fully considering uncertainty when transferring the model to novel climate data: there is a chance that the future climate conditions will not have occurred in the training dataset, and therefore our confidence in the model outcome should be lowered. This covariate shift is well documented to decrease the performance of models #cite(<Mesgaran2014>), and CP offers an opportunity to shine a different light on this phenomenon.
 
-Using the data from the CanESM5 model #cite(<Swart2019>) under the SSP370 scenario for the year 2090, it is possible to split the landscape as a function of (i) climatic novelty defined as values of the bioclimatic variables not observed in the training data and (ii) status of the range for the species. These results are presented in the table below:
-
-| Climatic novelty | Sure absence | Unsure | Sure presence |
-|------------------|--------------|--------|---------------|
-| Yes              | 50.46%       | 48.36% | 1.16%         |
-| No               | 54.54%       | 37.27% | 8.17%         |
-| *(difference)*   | 4.07%        | 11.09% | 7.01%         |
-
-These results show that *on average*, the areas with climatic novelty had more uncertain outcomes, which is in line with ecological expectations.
+This task is particularly crucial given that entirely novel climatic conditions are likely to become the norm #cite(<Mahony2017>), which in turn will drive the emergence of a novel biosphere globally #cite(<Kerr2025-sg>) #cite(<Ordonez2024>). In this section, I compare the results of conformation prediction to measures of climatic novelty, by partitioning the climate novelty according to the type of range shifts from #ref(<gainloss>, supplement: "fig.")B. The study area shows higher novelty in parts of the range that are currently predicted to be habitable by the species; nevertheless, this does not translate to an association between types of prediction transition and the distribution of novelty within the regions undergoing this transition. In other words, the projected uncertainty under conformal prediction contributes different information when compared to measures of climatic novelty; specifically, it conveys the uncertainty tied to the model itself.
 
 #figure(
   image("figures/novelty.png", width: 100%),
-  caption: [Overview of the occurrence data (green circles) and the pseudo-absences (grey points) for the states of, clockwise from the bottom, California, Oregon, Washington, Idaho, and Nevada. The underlying predictor data are at a resolution of 2.5 minutes of arc, and represented in the World Geodetic System 1984 CRS (EPSG 4326).],
+  caption: [Climate novelty measured as Euclidean distance to the closest contemporary analogue (A); note that the scale is square-root transformed, as most areas show low novelty. Distribution of novelty values split by the expected transition in occupancy (B); colors are as in #ref(<gainloss>, supplement: "fig.")B.],
   placement: auto
 ) <novelty>
 
 = Conclusion
 
-Conformal prediction, like most SDM methods, is not quite delivering a true estimate of the probability of presence #cite(<Phillips2013>). Nevertheless, it brings valuable information, in the form of a quantified measure of whether a prediction comes with uncertainty (are both presence and absence in the credible set?) in a way that is directly comparable with the non-conformal prediction. "Class overlap", where both presences and absences are observed under the same values of the predictions, decreases the predictive performance of models [#cite(<Valavi2021>, form: "prose")a] – CP is naturally suited at handling this, by assigning the area where overlap occurs to uncertain predictions.
+Conformal prediction, like most SDM methods, is not quite delivering a true estimate of the probability of presence #cite(<Phillips2013>). Nevertheless, it brings valuable information, in the form of a quantified measure of whether a prediction comes with uncertainty (are both presence and absence in the credible set?) in a way that is directly comparable with the non-conformal prediction. "Class overlap", where both presences and absences are observed under the same values of the predictions, decreases the predictive performance of models #cite(<Valavi2021>) --- CP is naturally suited at handling this, by assigning the area where overlap occurs to uncertain predictions.
 
-Transparent communication of uncertainty, meaning, it is both spatially explicit, quantified, and expressed under a risk set by the user, is important: we do not expect a fully trained model to always be certain, as some areas are genuinely more difficult to predict. For example, small organisms are more inherently stochastic #cite(<Soininen2013>); any form of stochastic event will drive species distribution in the general case #cite(<Mohd2016>); these stochastic events can appear even in areas that are close to the species' environmental optimum #cite(<Dallas2020>).
+Transparent communication of uncertainty, meaning that it is both spatially explicit, quantified, and expressed under a risk set by the user, is important: we do not expect a fully trained model to always be certain, as some areas are genuinely more difficult to predict. For example, small organisms are more inherently stochastic #cite(<Soininen2013>); any form of stochastic event will drive species distribution even when there is strong environmental signal #cite(<Mohd2016>); these stochastic events can even manifest in areas that are close to the species' environmental optimum #cite(<Dallas2020>). For these reasons, CP can produce interpretable estimates of uncertainty in species distribution models, and does not require the adoption of additional modeling tools or paradigms as it functions on an already trained model.
 
-CP contributes to dispel what #cite(<Messeri2024>, form: "prose") called the "illusion of understanding", which is often associated with ML models: it generates an understanding of the uncertainty from observations of a pre-trained model, and expresses this uncertainty both in absolute (is the "presence" event in the credible set?) and relative (is the conformal score for presence larger than for absence?) terms. Because this technique is computationally efficient and works on pre-trained models, it opens up the opportunity for more systematic uncertainty quantification #cite(<Zurell2020>) in SDMs. CP, in short, can deliver the "maps of ignorance" that #cite(<Rocchini2011>, form: "prose") argued for: how difficult is it to make a prediction for the range at a given risk level is, in and of itself, an important information to frame the reliability of the results. Finally, CP can provide guidance on the feedback loop between SDM training and field validation #cite(<Johnson2023>) – areas where the range is certain are a much lower priority for sampling. Looking back at *TK*, the uncertain areas are much smaller than the certain ones, which provides actionable guidance for field-based validation.
-
-= References
+CP contributes to dispel what #cite(<Messeri2024>, form: "prose") called the "illusion of understanding", which is often associated with ML models: it generates an understanding of the uncertainty from observations of a pre-trained model, and expresses this uncertainty both in absolute (is the "presence" event in the credible set?) and relative (is the point estimate of the score for presence larger than for absence?) terms. Because this technique is computationally efficient and works on pre-trained models, it opens up the opportunity for more systematic uncertainty quantification #cite(<Zurell2020>) in SDMs. CP, in short, can deliver the "maps of ignorance" that #cite(<Rocchini2011>, form: "prose") argued for: how difficult is it to make a prediction for the range at a given risk level is, in and of itself, an important information to frame the reliability of the results. Finally, CP can provide guidance on the feedback loop between SDM training and field validation #cite(<Johnson2023>) --- areas where the range is certain are a much lower priority for sampling.
 
 #bibliography("references.bib", style: "annual-reviews-author-date")
