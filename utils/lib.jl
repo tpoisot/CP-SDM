@@ -1,10 +1,10 @@
 function _softmax(p)
-    w = [exp(p), exp(1-p)]
+    w = [exp(p), exp(1 - p)]
     return w ./ sum(w)
 end
 
 function _no_softmax(p)
-    w = [p, 1-p]
+    w = [p, 1 - p]
     return w
 end
 
@@ -19,7 +19,7 @@ function _estimate_q(model, St, Sv; α=0.1, kwargs...)
     end
     # Get the quantile
     n = length(Sv)
-    qᵢ = ceil((n+1)*(1-α))/n
+    qᵢ = ceil((n + 1) * (1 - α)) / n
     q̂ = quantile(𝐶, qᵢ)
     return q̂
 end
@@ -42,10 +42,10 @@ end
 function credibleclasses(prediction::Number, q)
     s₊, s₋ = _softmax(prediction)
     out = Bool[]
-    if s₊ >= (1-q)
+    if s₊ >= (1 - q)
         push!(out, true)
     end
-    if s₋ >= (1-q)
+    if s₋ >= (1 - q)
         push!(out, false)
     end
     return Set(out)

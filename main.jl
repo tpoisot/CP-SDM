@@ -120,7 +120,7 @@ undet = .!(Cp2 .| Ca2)
 renderfigure("undetrange")
 
 # Shapley values
-S = explain(sdm, L; threshold=false)
+S = explain(sdm, L; threshold=false, samples=500)
 
 # Most important Shapley value (for fun, not used in the paper)
 mostdet = mosaic(x -> argmax(abs.(x)), S)
