@@ -2,6 +2,7 @@
 #set page(numbering: "1 of 1")
 #set text(font: "STIX Two Text")
 #show math.equation: set text(font: "STIX Two Math")
+#set math.equation(numbering: "(1)")
 
 *Abstract*: Providing accurate estimates of uncertainty is key for the analysis, adoption, and interpretation of species distribution models. In this manuscript, through the analysis of data from an emblematic North American cryptid, I illustrate how Conformal Prediction allows fast and informative uncertainty quantification. I discuss how the conformal predictions can be used to gain more knowledge about the importance of variables in driving presences and absences, and how they help assess the importance of climatic novelty when projecting the models under future climate change scenarios.
 
@@ -67,6 +68,52 @@ Bagging (bootstrap aggregating) is often used as a measure of uncertainty to the
 
 Measures of whether the different models composing the homogeneous ensemble agree can provide a measure of the effect of data and parameter uncertainty #cite(<Petropoulos2018>), or what #cite(<Davies2023>, form: "prose") termed the "SDM uncertainty". The best model identified after thresholding was evaluated on a hundred bootstrap samples, yielding an homogeneous ensemble model from which we estimate bootstrap variability #cite(<Chen2019>). Because the model is kept constant in this analysis, the measure of variability we will derive from the ensemble model is an estimate of how sensitive the estimation of the model parameters is to small perturbations (specifically: spatially homogeneous under-sampling) to the training data.
 
+= An introduction to conformal prediction
+
+Conformal prediction differs from regular prediction in that, rather than a single point prediction, it returns sets corresponding to the ensemble of _credible_ outcomes given an input $bold(x)$ representing environmental conditions at which we seek to make the prediction. Given the observed quantiles of the model output on validation data, these sets are obtained through a simple calibration step. Therefore, CP requires an already trained model, and is agnostic to the process through which this model is trained. In this section, I highlight two important features of CP: the notion of _credible sets_ (and how they are obtained), and the notion of _coverage_ , which is a measure of tolerance to error.
+
+== Understanding conformal predictions
+
+By contrast to the non-conformal SDM, the conformal classifier returns, for an input of environmental predictors $bold(x)$, a set $C$ containing the "credible outcomes" for this prediction. This set is termed the _credible set_, and under a binary classification task (the species is either present or absent), there are four possible combinations for the content of credible sets: $C = {+}$, $C = {-}$, $C = {+, -}$, and $C = emptyset$.
+
+The first two cases are simple: if the credible set contains a single output, the model can confidently make a prediction that excludes the other class. In the case of $C = {+}$, for example, the point prediction for the presence score $p_+$ is high enough that the outcome of absence can be ruled out given the known predictions on training examples. In some cases, the credible set may contain both classes, as in $C = {+, -}$. Although they may not be _equally likely_ (there is no guarantee that $p_+ approx p_-$), the scores are close enough to not confidently exclude one of the outcomes from the model prediction. In the specific cases of SDMs, these correspond to areas of true uncertainty, where the known training examples credibly support both the presence or absence of the species. The final situation, $C = emptyset$, corresponds to pathological cases where _neither_ outcome can be credibly supported. Given the training data (and the distribution of presences and absences), the model is not able to make a prediction for this input. The increased frequency of such predictions is most likely a strong sign that the risk level is too high (the confidence interval is too broad) for the training data given to the conformal model.
+
+These situations correspond to four different outcomes in terms of the SDM certainty about the distribution of the species. The most intuitive situation is $C = {+}$ or $C = {-}$, in which case the conformal model predicts that the absence (resp. presence) of the species is _not_ a credible outcome for the environmental conditions given as an input. Throghout this manuscript, I will refer to these predictions as "sure presences" and "sure absences", as they convey the information that there is no reason to expect that the prediction is uncertain. The second situation, $C = {+, -}$, corresponds to inputs for which the presence and the absence of the species are credible, and I will refer to them as "unsure". The rare cases where $C = emptyset$ will be "undetermined" predictions.
+
+== Obtaining conformal predictions
+
+There are several ways to decide whether a point prediction from the model results in which credible set. A core assumption of CP is that the data used for training should be exchangeable, or in other words, their joint probability distribution should be (close to) invariant under finite permutations #cite(<Aldous1985>). This will almost never be the case for data with a spatial structure; nevertheless, this does not rule out the use of CP for species distribution modeling, as #cite(<Oliveira2024>, form: "prose") show that CP is acceptably robust to lack of exchangeability.
+
+The central idea of CP is to associate a conformal score to a point prediction. This can be achieved by applying the $text("softmax")$ function to the values for $p_+$ and $p_-$, giving
+
+$
+s_+ = (exp p_+)/(exp p_+ + exp (1- p_+)), s_- = (exp (1 - p_+))/(exp p_+ + exp (1- p_+))
+$ <equation-softmax>
+
+The conformal score associated to a prediction is $1 - s_dot$, where $dot$ is the prediction ($+$ or $-$) made by the model. We call the distribution of conformal scores $cal(S)$. Note that this can be done without using the $text("softmax")$ function, but it is included here as it is best practice for classification.
+
+The next step is to identify a critical value $accent(q, hat)$ above which a conformal score indicates that the prediction it describes is credible. This critical value is picked by examining the empirical quantile distribution of the conformal scores calculated over $n$ training examples, and an acceptable level of risk $alpha$ (explained in depth in the next sub-section), and specifically by identifying the $q_i$-th quantile, where 
+
+$
+  q_i = ceil((n+1)(1-alpha))/n 
+$ <equation-quantile>
+
+The corresponding value of $S$ below which a proportion $q_i$ of values lies is $accent(q, hat)$. In other, more intuitive words, the value $q_i$ indicates what proportion of wrong classification events we must accept before we have accumulated enough evidence to be confident about a prediction. When performing the prediction, we calculate the score of a new prediction according to #ref(<equation-softmax>). For every possible class $x$, if $s_x >= (1 - accent(q, hat))$, this class is retained as part of the credible set.
+
+The value of $accent(q, hat)$ can be obtained either through using a holdout set for training (Split Conformal Prediction), by retraining the model in a way aking to Leave-One-Out cross-validation (Full Conformal Prediction), through the use of quantile regression #cite(<Romano2019>), or through taking the median of several estimates of $accent(q, hat)$ after cross-validation #cite(<Vovk2018>). In this manuscript, I employ the later method, as it provides a rapid and statistically acceptable estimate of $accent(q, hat)$, without requiring too much computing time.
+
+To summarize, the output of the conformal classifier is, in a sense, a point estimate of the credible outcomes of a model, using the value estimated for $p_+$ as well as knowledge about which of these were associated to the correct label in the training data. A location is defined as included in the range is the positive outcome is included within the credible set returned by the conformal classifier, and as excluded from the range when it is not. Because the conformal classifier can identify that both outcomes are credible based on the training data (while giving them different weights), predictions in which both the positive and negative outcomes are included in the credible set can be seen as "uncertain" at this given risk level.
+
+How frequently a specific prediction is uncertain is termed the inefficiency of the classifier, which is defined as the average cardinality of all credible sets. The inefficiency is bounded upwards by the number of classes (two for binary classification); when the inefficiency is $approx 1$, the conformal classifier behaves (essentially) like deterministic classifier, by returning a single class for each instance. An inefficiency close to unity is not desirable: smaller sets can hide our actual uncertainty #cite(<Sadinle2018>). Because the conformal models wraps the logisitc regression model, we can further divide the "unsure" predictions as a function of whether they would be within the range as predicted by the SDM, which I will call "unsure presences"; the other unsure predictions are referred to as "unsure absences".
+
+== The coverage level
+
+CP allows users to set a desired error rate, $alpha$, which appeared in #ref(<equation-quantile>). Intuitively, what CP does, is inform the user on whether the credible set contains the true value with probability $1-alpha$, which allows to directly interpret this value as a true confidence interval. This error rate is usually referred to as the _marginal coverage_, in that it captures the probability of success marginalized over the known validation points. Because the estimate of uncertainty involves the original model, it is important to apply CP on a model with adequate performance.
+
+Chaning the risk level $alpha$ leads to different estimates of how commonly multiple classes will be accepted as a credible outcome. Using a low level of risk ($alpha approx 0$) yields usually leads to all outcomes being credible ($accent(q, hat) approx 1$), at the cost of a very high uncertainty. When values of $alpha$ get too large ($accent(q, hat) approx 0$), no class can be confidently predicted, and the model will eventually always return $C = emptyset$. Although this later situation is more difficult to make sense of intuitively, a value of inefficiency that gets smaller than unity should be interpreted as a model that accumulates more uncertainty (at a given risk level) than the data can support #cite(<Romano2020>). Conformal prediction can therefore inform us on the acceptable risk levels we can operate under given a trained predictive model.
+
+In the rest of this analysis, I will set $alpha = 0.05$. As noted by #cite(<Angelopoulos2023a>, form: "prose"), this corresponds to estimating whether a specific prediction falls within, or outside of, the 95% confidence interval across all predictions, which is a convenient callback to frequentist statistics' usual risk tolerance. Recall that the CP credible sets are estimated based on the model output, and therefore even when aiming for full coverage, there may be non-ambiguous combinations of environmental predictors.
+
 = Results
 
 == Performance of the baseline model
@@ -81,40 +128,12 @@ The predictions of the model for the entire region are given in #ref(<prediction
   placement: auto
 ) <predictions>
 
-The trained model from #ref(<predictions>) can be used for conformal prediction. Conformal prediction differs from the regular prediction in that it creates sets (or, for quantitative responses, intervals) given an input value. Given the observed quantiles of the model output on the validation data, these sets are obtained through a simple calibration step. Therefore, CP can be applied on an already trained model, and is agnostic to the process through which this model is trained. In this section, I highlight two important features of CP: the notion of _credible sets_, and the _coverage_ statistic, which is a measure of tolerance to error. An in-depth introduction to CP is found in #cite(<Angelopoulos2023a>, form: "prose").
-
-== Understanding conformal predictions
-
-By contrast to the non-conformal SDM, the conformal classifier returns, for an input of environmental predictors $bold(x)$, a set $C$ containing the "credible outcomes" for this prediction. This set is termed the _credible set_, and there are three scenarios for its membership. First, if both the presence and absence are credible for this prediction, the credible set will be $C = accent(p_+, hat), accent(p_-, hat)$. 
-
-Second, the credible set can have a single outcome in it, either . In this case, one of the outcomes is credible, but the other is not. Finally, there is a chance that $C = emptyset$, in which case the conformal model has not enough evidence to include *either* outcome credibly.
-
-#cite(<Vovk2018>) cross-validate
-
-#cite(<Romano2019>) quantiles
-
-exchangeability #cite(<Oliveira2024>) show split is ok
-
-These situations correspond to four different outcomes in terms of the SDM certainty about the distribution of the species. The most intuitive situation is $C = "true"$ or $C = "false"$, in which case the conformal model predicts that the absence (resp. presence) of the species is *not* a credible outcome for the environmental conditions given as an input. We term these predictions "sure presences" and "sure absences", as *for a given value of the coverage statistic* $alpha$, there is no reason to expect that the prediction is uncertain. The second situation, $C = "true" "false"$, corresponds to inputs for which the presence and the absence of the species are credible (they may not be *equally* credible, as the score for one may be larger than the score for the other), and we term these predictions "unsure". The final situation corresponds to $C = emptyset$, which means that neither absence or presence can be credibly predicted – given the training data (and the distribution of presences and absences), the model is not able to make a prediction for this input. The multiplication of such predictions is most likely a strong sign that the risk level is too high (the confidence interval is too broad) for the training data given to the conformal model.
-
-To summarize, the output of the conformal classifier is, in a sense, a point-specific stand-in for the application of a threshold. A location is defined as included in the range is the positive outcome is included within the credible set returned by the conformal classifier, and as excluded from the range when it is not. Because the conformal classifier can identify that both outcomes are credible based on the training data (while giving them different weights), predictions in which both the positive and negative outcomes are included in the credible set can be seen as "uncertain" at this given risk level. How frequently a specific prediction is uncertain is termed the inefficiency of the classifier, which is defined as the average cardinality of all credible sets. The inefficiency is bounded upwards by the number of classes (two for binary classification); when the inefficiency is $approx 1$, the conformal classifier behaves (essentially) as a deterministic classifier, by returning a single class for each instance. An inefficiency close to unity is not desirable: smaller sets can hide our actual uncertainty #cite(<Sadinle2018>). Because the conformal models wraps the BRT model, we can further divide the "unsure" predictions as a function of whether they would be within the range as predicted by the BRT (*i.e.* $C = "rephrase"$), which we call "unsure presences"; the other unsure predictions are referred to as "unsure absences".
-
 
 #figure(
   image("figures/uncertainty.png", width: 100%),
   caption: [Overview of the occurrence data (green circles) and the pseudo-absences (grey points) for the states of, clockwise from the bottom, California, Oregon, Washington, Idaho, and Nevada. The underlying predictor data are at a resolution of 2.5 minutes of arc, and represented in the World Geodetic System 1984 CRS (EPSG 4326).],
   placement: auto
 ) <uncertainty>
-
-== Understanding the effect of the coverage level
-
-CP allows users to set a desired error rate, $alpha$: the conformal prediction is that the credible set contains the true value with probability $1-alpha$, which allows to directly interpret this value as a confidence interval. This error rate is usually referred to as the *marginal coverage*, in that it captures the probability of success marginalized over the known validation points. Because the estimate of uncertainty involves the original model, it is important to apply CP on a model with adequate performance.
-
-In *TK* we show how changing the risk level ($alpha$) leads to different estimates of the range size of the species. Using a low level of risk ($alpha approx 0$) yields the largest possible range, but at the cost of a very high uncertainty - this is evidenced by the value of inefficiency getting closer to 2 (the maximum value, as the outcomes of the classification are either positive or negative). For values larger than $alpha approx 0.12$, there is a situation in which the inefficiency of the conformal prediction (which is to say, the average number of outcomes in the credible set) is less than one; this corresponds to a situation where some instances are impossible to assign to either outcome. Although this situation is more difficult to make sense of intuitively, a value of inefficiency that gets further away from unity should be interpreted as a model that accumulates more uncertainty (at a given risk level) than the data can support #cite(<Romano2020>).
-
-*LEG* Effects of changing the value of $alpha$ on the size of the range (left panel, split by uncertainty category) and conformal classifier performance (right column, top panel is inefficiency and bottom panel is coverage).
-
-In the rest of this analysis, we set $alpha = 0.05$. As noted by #cite(<Angelopoulos2023a>, form: "prose"), this corresponds to estimating whether a specific prediction falls within, or outside of, the 95% confidence interval across all predictions, which is a convenient callback to frequentist statistics' usual risk tolerance. From *TK*, this level of risk would represent an inefficiency of about 1.2, meaning that 20% of the predictions would have both presence and absence in their credible set. Note that even when setting the risk at $alpha = 0.0$, the inefficiency does not climb up to 2 (the theoretical maximum); there would be a number of pixels (about 15%) that only have either presence or absence in their credible set. Recall that the CP credible sets are estimated based on the model output, and therefore even when aiming for full coverage, there are non-ambiguous combinations of environmental predictors.
 
 #figure(
   image("figures/undetrange.png", width: 100%),
@@ -127,6 +146,9 @@ In the rest of this analysis, we set $alpha = 0.05$. As noted by #cite(<Angelopo
 Before discussing the spatial output of running the conformal model, it is worth considering why the thresholding step applied in *TK* is not really providing us with a set of certain presences and absences. When optimizing the threshold $tau$ above which a prediction $p_+$ from the non-conformal model is determined to be a presence, we establish a sort of certain presences and certain absences; indeed, the space covered by positive predictions is usually interpreted as the (potential) distribution of the species. But this prediction conveys a false sense of certainty, that has to do with the very nature of the threshold we optimize. By definition, the threshold is the value that finds the best balance between the false/true positive/negative cases on the validation data; this is in fact why the optimal threshold is the point closest to the corners of the ROC and PR curves indicating a perfect classifier #cite(<Balayla2020>). When a prediction $p_+$ gets closer to the threshold, a small perturbation to the environmental conditions locally could bring it on the other side of the threshold, and therefore flip the predicted class using the non-conformal classifier. Around the threshold is where we expect uncertainty to be the greatest.
 
 To bring these considerations into a spatial context: we expect the areas where the score for the present class are closer to the threshold (the limits of the predicted range of the species) to be the most uncertain. Importantly, this is true _both_ for areas that are inside the range (for which $p_+$ is just above the threshold) and for areas that are outside of it (for which $p_+$ is just below the threshold). CP is perfectly suited to solving this issue, by identifying the areas where one class is predicted, but the other class is also credible. In this section, we will project the areas with uncertain predictions, and compare the uncertainty quantified by the conformal model to the uncertainty derived from the ensemble model.
+
+
+> this is evidenced by the value of inefficiency getting closer to 2 (the maximum value, as the outcomes of the classification are either positive or negative). For values larger than $alpha approx 0.12$, there is a situation in which the inefficiency of the conformal prediction (which is to say, the average number of outcomes in the credible set) is less than one; this corresponds to a situation where some instances are impossible to assign to either outcome. 
 
 == Identification of areas with uncertainty
 
@@ -180,7 +202,6 @@ Using the data from the CanESM5 model #cite(<Swart2019>) under the SSP370 scenar
 | *(difference)*   | 4.07%        | 11.09% | 7.01%         |
 
 These results show that *on average*, the areas with climatic novelty had more uncertain outcomes, which is in line with ecological expectations.
-
 
 #figure(
   image("figures/novelty.png", width: 100%),

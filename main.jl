@@ -43,7 +43,6 @@ folds = kfold(sdm)
 # as the measure
 variables!(sdm, ForwardSelection, folds; verbose=true)
 
-
 # VI
 vi = variableimportance(sdm, kfold(sdm); threshold=false)
 miv = variables(sdm)[last(findmax(vi))]
