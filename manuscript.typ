@@ -3,6 +3,7 @@
 #set text(font: "STIX Two Text")
 #show math.equation: set text(font: "STIX Two Math")
 #set math.equation(numbering: "(1)")
+#show table.cell.where(y: 0): strong
 
 *Abstract*: Providing accurate estimates of uncertainty is key for the analysis, adoption, and interpretation of species distribution models. In this manuscript, through the analysis of data from an emblematic North American cryptid, I illustrate how Conformal Prediction allows fast and informative uncertainty quantification. I discuss how the conformal predictions can be used to gain more knowledge about the importance of variables in driving presences and absences, and how they help assess the importance of climatic novelty when projecting the models under future climate change scenarios.
 
@@ -118,22 +119,46 @@ In the rest of this analysis, I will set $alpha = 0.05$. As noted by #cite(<Ange
 
 == Performance of the baseline model
 
-In panels B and C of #ref(<occurrences>), we report the ROC and PR curves for the model. As evidenced by both these diagnostic tools, the model achieves a very high predictive accuracy *TK MORE STATS*. These results confirm that the model is able to identify areas that are suitable to the species, and can be used for CP.
+#figure(
+table(
+  columns: 4,
+  [Measure], [Validation], [Training], [Ensemble],
+  [MCC], [0.75], [0.76], [0.76],
+  [NPV], [0.93], [0.93], [0.94],
+  [PPV], [0.82], [0.83], [0.82],
+  [$kappa$], [0.75], [0.76], [0.76],
+  [TSS], [0.74], [0.75], [0.76],
+  [Accuracy], [0.91], [0.91], [0.91],
+),
+caption: [Overview of measures of model performance for the validation and training sets of the SDM, as well as the same measures for the ensemble model (measured on the out-of-bag models only). The values of $kappa$ and the true-skill statistic are generally comparable to the MCC, but are included as they are commonly reported in the SDM litterature #cite(<Allouche2006>). The high values of the negative and positive predictive values indicate that the model is suitable to detect both presences and absences.],
+placement: auto,
+) <table-performance>
 
-The predictions of the model for the entire region are given in #ref(<predictions>), alongside information about the model variability. Areas of lowest variability (according to the IQR based on non-parametric boostrap results) seem to be associated with the absence of the species, with the variability mostly increasing within the predicted range.
+In panels B and C of #ref(<occurrences>), we report the ROC and PR curves for the model. As evidenced by both these diagnostic tools, the model achieves a very high predictive accuracy. In #ref(<table-performance>), we report additional measures of performance for the training and validation set of the model (so as to ensure that the model is not performing better on training data), as well as a measure of the performance of the ensemble, to show that it can make valid predictions in addition to quantifying variability. These results confirm that the model is able to identify areas that are suitable to the species, and can be used for CP.
+
+Before applying CP, it is useful to examine the output of the SDM in space. The predictions of the model for the entire region are given in #ref(<predictions>), alongside information about the model variability. Areas of lowest variability (according to the IQR based on non-parametric boostrap results from the ensemble) seem to be associated with the absence of the species, with the variability mostly increasing within the predicted range.
 
 #figure(
   image("figures/prediction.png", width: 100%),
-  caption: [Overview of the probability $p_+$ returned by the model (A), and the inter-quantile range of the non-parameteric bootstrap model predictions (B). The range, _i.e._ the limit of cells for which $p_+ >= tau$, is indicated by a solid red line; I maintain this convention for all subsequent figures.],
+  caption: [Overview of the probability $p_+$ returned by the model (A), and the inter-quantile range of the non-parameteric bootstrap model predictions (B). The range, _i.e._ the limit of cells for which $p_+ >= tau$, is indicated by a solid red line; I maintain this convention for all subsequent figures. Note that the scale of the variability is logarithmic, as the model shows good performance and therefore has low variability overall.],
   placement: auto
 ) <predictions>
 
+== Conformal prediction of the species range
+
+Before discussing the spatial output of running the conformal model, it is worth considering why the thresholding step as visualized in #ref(<predictions>) is not really providing us with a set of certain presences and absences. When optimizing the threshold $tau$ above which a prediction $p_+$ from the non-conformal model is determined to be a presence, we inherently establish a sort of certain presences and certain absences, specifically by ignoring the possibility that there can be uncertain predictions. Indeed, the space covered by positive predictions is usually interpreted as the (potential) distribution of the species. But this prediction conveys a false sense of certainty, that has to do with the very nature of the threshold we optimize. By definition, the threshold is the value that finds the best balance between the false/true positive/negative cases on the validation data; this is in fact why the optimal threshold is the point closest to the corners of the ROC and PR curves indicating a perfect classifier #cite(<Balayla2020>). When a prediction $p_+$ gets closer to the threshold, a small perturbation to the environmental conditions locally could bring it on the other side of the threshold, and therefore flip the predicted class using the non-conformal classifier. Around the threshold is where we expect uncertainty to be the greatest.
+
+To bring these considerations into a spatial context: we expect the areas where the score for the present class are closer to the threshold (the limits of the predicted range of the species) to be the most uncertain. Importantly, this is true _both_ for areas that are inside the range (for which $p_+$ is just above the threshold) and for areas that are outside of it (for which $p_+$ is just below the threshold). CP is perfectly suited to solving this issue, by identifying the areas where one class is predicted, but the other class is also credible. In this section, we will project the areas with uncertain predictions, and compare the uncertainty quantified by the conformal model to the uncertainty derived from the ensemble model.
 
 #figure(
   image("figures/uncertainty.png", width: 100%),
-  caption: [Overview of the occurrence data (green circles) and the pseudo-absences (grey points) for the states of, clockwise from the bottom, California, Oregon, Washington, Idaho, and Nevada. The underlying predictor data are at a resolution of 2.5 minutes of arc, and represented in the World Geodetic System 1984 CRS (EPSG 4326).],
+  caption: [Overview of areas where the presence of the species is certain according to the CP model under a risk level $alpha = 0.05$ (A). The certain areas are in dark green, and the uncertain areas, wherein both presence and absence are credible, are in dark grey. (B) Surface covered by the sure absence and total range (including the superficy of the unsure area) for different risk levels. Note that for $alpha approx 0.1$, the total predicted range starts being lower than the range predicted by the SDM, and the uncertain range collapses. (C) Distribution of variability from #ref(<predictions>)B by type of CP model outcome.],
   placement: auto
 ) <uncertainty>
+
+In #ref(<uncertainty>), we show that this prediction indeed stands: the range as predicted by the SDM (#ref(<uncertainty>, supplement: "fig.")A) falls within the range of unsure predictions. We also see that lowering the risk level $alpha$ leads to a contraction of the area (in $"km"^2$) considered to be credibly associated to only the presence of the species ($C = {+}$), while the range that is ambiguous ($C = {+, -}$) increases (#ref(<uncertainty>)B). Note that the relationship between the certainty associated to CP, and the variability under the ensemble model presented in #ref(<predictions>)B is nuanced: in #ref(<uncertainty>, supplement: "fig.")C, it appears that although areas identified as unsure using CP tend to have higher variability, there is considerable overlap between the categories. This suggests that CP identifies a type of uncertainty that is complementary to, but different from, what would be identified through bootstrapping. Notably, the results in #ref(<uncertainty>, supplement: "fig.")C show that it is not possible to find a cutoff in the measure of bootstrap variability that would identify areas of model uncertainty.
+
+== Identification of areas with uncertainty
 
 #figure(
   image("figures/undetrange.png", width: 100%),
@@ -141,20 +166,14 @@ The predictions of the model for the entire region are given in #ref(<prediction
   placement: auto
 ) <undetrange>
 
-== Analysis of the predicted species range
-
-Before discussing the spatial output of running the conformal model, it is worth considering why the thresholding step applied in *TK* is not really providing us with a set of certain presences and absences. When optimizing the threshold $tau$ above which a prediction $p_+$ from the non-conformal model is determined to be a presence, we establish a sort of certain presences and certain absences; indeed, the space covered by positive predictions is usually interpreted as the (potential) distribution of the species. But this prediction conveys a false sense of certainty, that has to do with the very nature of the threshold we optimize. By definition, the threshold is the value that finds the best balance between the false/true positive/negative cases on the validation data; this is in fact why the optimal threshold is the point closest to the corners of the ROC and PR curves indicating a perfect classifier #cite(<Balayla2020>). When a prediction $p_+$ gets closer to the threshold, a small perturbation to the environmental conditions locally could bring it on the other side of the threshold, and therefore flip the predicted class using the non-conformal classifier. Around the threshold is where we expect uncertainty to be the greatest.
-
-To bring these considerations into a spatial context: we expect the areas where the score for the present class are closer to the threshold (the limits of the predicted range of the species) to be the most uncertain. Importantly, this is true _both_ for areas that are inside the range (for which $p_+$ is just above the threshold) and for areas that are outside of it (for which $p_+$ is just below the threshold). CP is perfectly suited to solving this issue, by identifying the areas where one class is predicted, but the other class is also credible. In this section, we will project the areas with uncertain predictions, and compare the uncertainty quantified by the conformal model to the uncertainty derived from the ensemble model.
-
-
-> this is evidenced by the value of inefficiency getting closer to 2 (the maximum value, as the outcomes of the classification are either positive or negative). For values larger than $alpha approx 0.12$, there is a situation in which the inefficiency of the conformal prediction (which is to say, the average number of outcomes in the credible set) is less than one; this corresponds to a situation where some instances are impossible to assign to either outcome. 
-
-== Identification of areas with uncertainty
 
 As far as ecologists are concerned, the areas in which the credible set only has a score for the absence of the species are the easiest to make sense of: they correspond to regions where the model is certain (under the specified risk level) that the species is absent. All other areas (assuming that there are no predictions for which the credible set is empty) are *potentially* part of the range of the species: some certainly, some uncertainly. In *TK*, we present the result of the conformal prediction under $alpha = 0.05$, by showing the class attributed to the present class ($\hat p_+$), as well the type of prediction: sure presence, unsure presence, unsure absence, and sure absence. This information can be conveyed in a number of ways. For example, what is the threshold $alpha$ for which a pixel is included into the range of a species, either certainly or uncertainly? This question is not explored here, but shows the possible versatility of CP.
 
 *LEG* Prediction made by the conformal classifier at a risk level $alpha = 0.05$. The left panel indicates score associated with the presence at this location. The left panels shows areas in gray where the negative class is associated in the credible set (the "uncertain" part of the range), and areas in black where the negative class is not part of the credible set (the "certain" part of the range). Changing the value of $alpha$ would change the boundaries of the certain/uncertain range.
+
+
+
+> this is evidenced by the value of inefficiency getting closer to 2 (the maximum value, as the outcomes of the classification are either positive or negative). For values larger than $alpha approx 0.12$, there is a situation in which the inefficiency of the conformal prediction (which is to say, the average number of outcomes in the credible set) is less than one; this corresponds to a situation where some instances are impossible to assign to either outcome. 
 
 == Uncertain areas are different from bootstrap estimates of variability
 

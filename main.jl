@@ -53,13 +53,21 @@ renderfigure("occurrences")
 # Make a PrettyTable for output
 ConfusionMatrix(sdm) |> mcc
 
+cv = crossvalidate(sdm, kfold(sdm))
+map(ppv, cv)
+map(npv, cv)
+map(mcc, cv)
+map(κ, cv)
+map(trueskill, cv)
+map(accuracy, cv)
+
 # Range
 distrib = predict(sdm, L; threshold=true)
 
 # Bootstrap to get to uncertainty - we re-train 50 models with the same
 # features, but different bags
 bsdm = Bagging(sdm, 50)
-bsdm |> outofbag |> (M) -> 1 - accuracy(M) # OOB error
+bsdm |> outofbag |> accuracy # OOB error
 train!(bsdm)
 bsvaria = predict(bsdm, L; threshold=false, consensus=iqr)
 
