@@ -32,7 +32,8 @@
 
 #text(18pt, rgb("#1d8265"), weight: "light",  font: "Inter", "Conformal Prediction quantifies the uncertainty of Species Distribution Models")
 #v(4em, weak: true)
-Timothée Poisot --- Département de Sciences Biologiques, Université de Montréal, Montréal QC, Canada
+Timothée Poisot --- Département de Sciences Biologiques, Université de Montréal, Montréal QC, Canada   
+
 `timothee.poisot@umontreal.ca`
 #v(10em, weak: true)
 
