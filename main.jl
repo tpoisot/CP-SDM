@@ -28,7 +28,7 @@ end
 δ = 1.05 # Tapering for distance
 presencelayer = mask(first(L), Occurrences(records))
 background = pseudoabsencemask(DistanceToEvent, presencelayer)
-bgpoints = backgroundpoints(nodata(background, d -> d < 10).^δ, 3sum(presencelayer))
+bgpoints = backgroundpoints(nodata(background, d -> d < 10) .^ δ, 3sum(presencelayer))
 
 # Set up the model - logistic regression with Z-score before
 sdm = SDM(ZScore, Logistic, L, presencelayer, bgpoints)
