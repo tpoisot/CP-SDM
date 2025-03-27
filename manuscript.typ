@@ -190,15 +190,23 @@ As the predictions of the conformal model can be split by whether they are certa
 
 We find that, for the most important variable (_i.e._ the one with the largest $sum |phi|$), the contribution of this variable tracks the status of the prediction: it tends to be negative when the absence is certain, positive when the presence is certain, and around zero when the prediction is unsure (#ref(<shapley>, supplement: "fig.")B). This is a fairly remarkable result, in that it ties Shapley values (a tool to help with ML models interpretation) to CP (a technique to accurately convey uncertainty). In #ref(<shapley>)C, I present the relative contribution of all selected variables split by the status of the prediction; this reveals that the Shapley values for sure presences and unsure areas are distributed in different ways. Notably, BIO15 is far more important in areas of high model uncertainty than in areas of either sure presences or absences. This suggests that the division of the prediction according to CP status can provide information about which sets of environmental conditions are driving the uncertainty, thereby providing useful information to guide future sampling or model interpretation.
 
+== Conformal prediction and climate-induced range shifts
+
+In a recent contribution, #cite(<Smith2025>, form: "prose") suggest that because of issues around the use of thresholds, projections of SDMs under climate change scenarios may benefit from a more continuous perspective. In this section, I present a comparison of the conformal prediction of the range under a climate change scenario (SSP370. 2081-2100), to illustrate how the future conformal range can convey information about the certainty of some types of range shift. These results are presented in #ref(<gainloss>).
+
 #figure(
   image("figures/gainloss.png", width: 100%),
-  caption: [Overview of the occurrence data (green circles) and the pseudo-absences (grey points) for the states of, clockwise from the bottom, California, Oregon, Washington, Idaho, and Nevada. The underlying predictor data are at a resolution of 2.5 minutes of arc, and represented in the World Geodetic System 1984 CRS (EPSG 4326).],
+  caption: [Overview of the conformal prediction of the range for the future climate data, equivalent to #ref(<predictions>, supplement: "fig.")A (panel A). Spatial distribution of areas where loss and gain are expected to be possible _v._ certain, as explained in main text (B).],
   placement: auto
 ) <gainloss>
 
-== Model projection
+Based on the comparison between the baseline (#ref(<predictions>, supplement: "fig.")A) and projected (#ref(<gainloss>, supplement: "fig.")A) ranges, we can establish a series of transitions and their interpretations as range change scenarios, which are presented in #ref(<gainloss>, supplement: "fig.")B. Areas that are certain both now and in the future, ${+} -> {+}$, can safely be assumed to be conserved. Areas that where unsure and become surely negative, ${+,-} -> {-}$ are _possible_ losses, as they may have been presences in the baseline data, but are considered lost in the future. The reverse scenario, ${+,-} -> {+}$, corresponds to _possible_ gains. Sure losses of range correspond to the transition ${+} -> {-}$, and sure gains of range correspond to ${-} -> {+}$. Other situations are considered ambiguous.
 
-#cite(<Zurell2012>) highlight the importance of uncertainty when transferring the model to novel climate data: there is a chance that the future climate condition will not have occurred in the training dataset, and therefore our confidence in the model outcome may be lowered. This covariate shift is well documented to decrease the performance of models #cite(<Mesgaran2014>), and CP offers an opportunity to quantify this phenomenon.
+By applying these rules on the predicted changes in presence/absence status, we can identify large areas that are confidently loss towards the Southern edge of the species's range, with very limited areas of either possible or sure gain, strongly suggesting that this species would undergo range contraction. Note that the area corresponding to ambiguous transitions is relatively large, which provides a good understanding of the possible variation to be expected under this climate change scenario.
+
+== Conformal prediction and climatic novelty
+
+#cite(<Zurell2012>) highlight the importance of fully considering uncertainty when transferring the model to novel climate data: there is a chance that the future climate conditions will not have occurred in the training dataset, and therefore our confidence in the model outcome may be lowered. This covariate shift is well documented to decrease the performance of models #cite(<Mesgaran2014>), and CP offers an opportunity to quantify this phenomenon.
 
 Using the data from the CanESM5 model #cite(<Swart2019>) under the SSP370 scenario for the year 2090, it is possible to split the landscape as a function of (i) climatic novelty defined as values of the bioclimatic variables not observed in the training data and (ii) status of the range for the species. These results are presented in the table below:
 
