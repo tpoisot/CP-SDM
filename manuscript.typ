@@ -61,11 +61,11 @@
   #v(5fr)
 ]
 
-// #titlepage(json("metadata.json"))
+#titlepage(json("metadata.json"))
 #pagebreak()
 
 // Editing marks
-#let add(body) = text(fill: rgb(0, 0, 0))[#highlight(body, fill: rgb(180, 250, 140))]
+#let add(body) = text(fill: rgb(0, 100, 0), weight: "bold")[#highlight(body, fill: rgb(250, 250, 240))]
 #let change(body) = text(fill: rgb(0, 100, 100))[#underline(body, stroke: rgb(0, 90, 90))]
 #let cut(body) = text(fill: rgb(150, 150, 150))[#strike(body, stroke: rgb(100, 0, 0))]
 #show "TK": text(weight: "bold", fill: rgb(100, 0, 0))["!! TK !!"]
