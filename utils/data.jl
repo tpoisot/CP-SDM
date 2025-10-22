@@ -14,10 +14,10 @@ polygons = [
 ]
 
 # We merge the states (but keep the borders for the map)
-landmass = vcat(polygons...)
+landmass = sum(polygons)
 
 # Bounding box to clip the layers
-extent = SDT.boundingbox(landmass)
+extent = SDT._reconcile(SDT.boundingbox.(polygons))
 
 # Get the layers
 provider = RasterData(WorldClim2, BioClim)

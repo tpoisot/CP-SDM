@@ -11,7 +11,7 @@ Random.seed!(42069)
 # Load the functions we need here
 include("utils/theme.jl")
 include("utils/lib.jl")
-include("utils/cellsize.jl")
+#include("utils/cellsize.jl")
 include("utils/novelty.jl")
 include("utils/data.jl")
 
@@ -27,9 +27,19 @@ end
 
 # Generate pseudo-absences
 δ = 1.05 # Tapering for distance
-presencelayer = mask(first(L), Occurrences(records))
+presencelayer = mask(first(L), records)
 background = pseudoabsencemask(DistanceToEvent, presencelayer)
-bgpoints = backgroundpoints(nodata(background, d -> d < 10) .^ δ, 3sum(presencelayer))
+bgpoints = backgroundpoints(nodata(background, d -> d < 20) .^ δ, 3sum(presencelayer))
+
+# Map of occurrences
+f = Figure()
+ax = Axis(f[1,1])
+for p in polygons
+    lines!(ax, p, color=:black)
+end
+scatter!(ax, presencelayer; markersize=6, color=:orange)
+scatter!(ax, bgpoints; markersize=5, color=:grey50)
+current_figure()
 
 # Set up the model - logistic regression with Z-score before
 sdm = SDM(ZScore, Logistic, L, presencelayer, bgpoints)
@@ -43,9 +53,10 @@ folds = kfold(sdm)
 # Train the model with optimal set of variables, using forward selection and MCC
 # as the measure
 variables!(sdm, ForwardSelection, folds; verbose=true)
+threshold!(sdm)
 
 # VI
-vi = variableimportance(sdm, kfold(sdm); threshold=false)
+vi = variableimportance(sdm, folds; threshold=false)
 miv = variables(sdm)[last(findmax(vi))]
 
 renderfigure("occurrences")
@@ -54,7 +65,7 @@ renderfigure("occurrences")
 # Make a PrettyTable for output
 ConfusionMatrix(sdm) |> mcc
 
-cv = crossvalidate(sdm, kfold(sdm))
+cv = crossvalidate(sdm, folds)
 map(ppv, cv)
 map(npv, cv)
 map(mcc, cv)
