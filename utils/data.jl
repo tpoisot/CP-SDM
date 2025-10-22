@@ -14,10 +14,10 @@ polygons = [
 ]
 
 # We merge the states (but keep the borders for the map)
-landmass = sum(polygons)
+landmass = FeatureCollection(polygons)
 
 # Bounding box to clip the layers
-extent = SDT._reconcile(SDT.boundingbox.(polygons))
+extent = SDT.boundingbox(landmass)
 
 # Get the layers
 provider = RasterData(WorldClim2, BioClim)
@@ -25,15 +25,12 @@ prj = Projection(SSP370, MRI_ESM2_0)
 L = SDMLayer{Float32}[SDMLayer(provider; resolution=2.5, layer=l, extent...) for l in layers(provider)]
 F = SDMLayer{Float32}[SDMLayer(provider, prj; resolution=2.5, timespan=Dates.Year(2081) => Dates.Year(2100), layer=l, extent...) for l in layers(provider)]
 
-lmask = [mask(L[1], p) for p in polygons]
-msk = reduce(.|, [lm.indices for lm in lmask])
+# Mask the layers
+mask!(L, landmass)
 
-for i in eachindex(L)
-    L[i].indices = msk
-end
-
+# Mask the future layers
 for i in eachindex(F)
-    F[i].indices = msk
+    F[i].indices .&= L[1].indices
     F[i].x = L[1].x
     F[i].y = L[1].y
 end

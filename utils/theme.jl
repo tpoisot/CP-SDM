@@ -3,10 +3,10 @@ CairoMakie.activate!(; type="png")
 update_theme!(;
     backgroundcolor=:transparent,
     fonts=(;
-        regular="STIX Two Text",
-        bold="STIX Two Text SemiBold",
-        italic="STIX Two Text Italic",
-        bold_italic="STIX Two Text SemiBold Italic",
+        regular="Libertinus Sans",
+        bold="Libertinus Sans Bold",
+        italic="Libertinus Sans Italic",
+        bold_italic="Libertinus Sans Bold Italic",
     ),
     fontsize=13,
     Figure=(;

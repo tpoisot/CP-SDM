@@ -25,10 +25,9 @@ if ~ispath(apath)
 end
 
 # Generate pseudo-absences
-δ = 1.05 # Tapering for distance
 presencelayer = mask(first(L), records)
 background = pseudoabsencemask(DistanceToEvent, presencelayer)
-bgpoints = backgroundpoints(nodata(background, d -> d < 5) .^ δ, 6sum(presencelayer))
+bgpoints = backgroundpoints(nodata(background, d -> !(20 <= d <= 300)), 3sum(presencelayer))
 
 # Map of occurrences
 f = Figure()
@@ -44,7 +43,9 @@ current_figure()
 sdm = SDM(ZScore, Logistic, L, presencelayer, bgpoints)
 hyperparameters!(classifier(sdm), :η, 1e-3) # Slow descent
 hyperparameters!(classifier(sdm), :interactions, :all) # All interactions
-hyperparameters!(classifier(sdm), :epochs, 8000) # Longer training
+hyperparameters!(classifier(sdm), :epochs, 10000) # Longer training
+
+train!(sdm)
 
 # Folds
 folds = kfold(sdm)
@@ -119,7 +120,7 @@ for i in eachindex(qs)
 end
 
 # Cross-conformal with median range selected
-q = median([_estimate_q(cmodel, fold...; α=0.1) for fold in folds])
+q = median([_estimate_q(cmodel, fold...; α=0.05) for fold in folds])
 Cp, Ca = credibleclasses(prd, q)
 
 # Partition
@@ -131,17 +132,15 @@ unsure_out = unsure .& (.!distrib)
 
 renderfigure("uncertainty")
 
-
-
 # Example with unknown areas
-q2 = median([_estimate_q(cmodel, fold...; α=0.1) for fold in kfold(cmodel; k=10)])
+q2 = median([_estimate_q(cmodel, fold...; α=0.15) for fold in folds])
 Cp2, Ca2 = credibleclasses(prd, q2)
 undet = .!(Cp2 .| Ca2)
 
 renderfigure("undetrange")
 
 # Shapley values
-S = explain(sdm, L; threshold=false, samples=500)
+S = explain(sdm, L; threshold=false, samples=100)
 
 # Most important Shapley value (for fun, not used in the paper)
 mostdet = mosaic(x -> argmax(abs.(x)), S)
