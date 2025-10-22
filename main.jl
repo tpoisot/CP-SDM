@@ -98,6 +98,21 @@ prd = predict(sdm, L; threshold=false)
 
 renderfigure("prediction")
 
+# this is where the experiments start
+mc_q = [conformal(sdm, f...; α=0.05) for f in kfold(sdm)]
+q₊, q₋ = vec(median(vcat([hcat(q...) for q in mc_q]...), dims= 1))
+
+Ŷ = predict(sdm, L; threshold=false)
+uncertain = (x -> length(credibleclasses(x, q₊, q₋))).(Ŷ)
+heatmap(predict(sdm, L), colormap=[:white, :darkgreen])
+heatmap!(uncertain, colormap=[:transparent, :grey70])
+contour!(predict(sdm, L), color=:darkgreen)
+lines!(landmass, color=:black)
+scatter!(presencelayer, color=:lime, markersize=4)
+current_figure()
+
+# normal code resumes
+
 cs = cellarea(prd)
 
 cmodel = deepcopy(sdm)

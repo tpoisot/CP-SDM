@@ -72,5 +72,5 @@ function credibleclasses(ŷ, q₊, q₋; w₊=1.0, w₋=1.0, softmax=true)
     if (w₋ * p₋) <= q₋
         push!(ℂ, false)
     end
-    return C
+    return ℂ
 end
