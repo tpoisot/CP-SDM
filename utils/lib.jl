@@ -24,6 +24,10 @@ function _estimate_q(model, St, Sv; α=0.1, kwargs...)
     return q̂
 end
 
+# TODO: need to make an additional function for adaptive prediction sets, and
+# while at it, might refactor to do different types of predictions in a more
+# formal way
+
 function credibleclasses(prediction::SDMLayer, q)
     presence = zeros(prediction, Bool)
     absence = zeros(prediction, Bool)
