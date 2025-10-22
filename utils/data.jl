@@ -1,33 +1,25 @@
-#=
-if ~isfile("occurrences.csv")
-    Downloads.download("https://raw.githubusercontent.com/tpoisot/ConformalSDM/refs/heads/main/data/occurrences.csv", "occurrences.csv")
-end
-
-occlines = readlines("occurrences.csv")[2:end]
-class_a = filter(contains("Class A"), occlines)
-valid_info = [split(obs, ",")[end-2:end] for obs in class_a]
-
-datefun = (s) -> Dates.Date(s, Dates.dateformat"yyyy-mm-ddTH:M:SZ")
-=#
-
+# Load the data from the occurrences interface
 records = OccurrencesInterface.__demodata();
 
+# Get the country-level data from GADM
 gadm_usa_level1 = getpolygon(PolygonData(GADM, Countries); level=1, country="USA")
 
-# Get the states
+# Now we get the states we want to include in the model
 polygons = [
-    gadm_usa_level1["Oregon"],
     gadm_usa_level1["California"],
-    gadm_usa_level1["Nevada"],
     gadm_usa_level1["Idaho"],
-    gadm_usa_level1["Washington"]
+    gadm_usa_level1["Nevada"],
+    gadm_usa_level1["Oregon"],
+    gadm_usa_level1["Washington"],
 ]
 
-# We merge the states (but keep the borders)
+# We merge the states (but keep the borders for the map)
 landmass = vcat(polygons...)
 
+# Bounding box to clip the layers
 extent = SDT.boundingbox(landmass)
 
+# Get the layers
 provider = RasterData(WorldClim2, BioClim)
 prj = Projection(SSP370, MRI_ESM2_0)
 L = SDMLayer{Float32}[SDMLayer(provider; resolution=2.5, layer=l, extent...) for l in layers(provider)]
