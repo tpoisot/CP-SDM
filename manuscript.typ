@@ -175,7 +175,7 @@ $ <equation-quantile>
 
 The corresponding value of $S$ below which a proportion $q_i$ of values lies is $accent(q, hat)$. In other, more intuitive words, the value $q_i$ indicates what proportion of wrong classification events we must accept before we have accumulated enough evidence to be confident about a prediction. When performing the prediction, we calculate the score of a new prediction according to #ref(<equation-softmax>). For every possible class $x$, if $s_x >= (1 - accent(q, hat))$, this class is retained as part of the credible set.
 
-The value of $accent(q, hat)$ can be obtained either through using a holdout set for training (Split Conformal Prediction), by retraining the model in a way aking to Leave-One-Out cross-validation (Full Conformal Prediction), through the use of quantile regression #cite(<Romano2019>), or through taking the median of several estimates of $accent(q, hat)$ after cross-validation #cite(<Vovk2018>).
+The value of $accent(q, hat)$ can be obtained either through using a holdout set for training (Split Conformal Prediction), by retraining the model in a way aking to Leave-One-Out cross-validation (Full Conformal Prediction), through the use of quantile regression #cite(<Romano2019>), or through taking the median of several estimates of $accent(q, hat)$ after cross-validation #cite(<Vovk2018>). #cut[In this manuscript, I employ the later method, as it provides a rapid and statistically acceptable estimate of $accent(q, hat)$, without requiring too much computing time.]
 
 To summarize, the output of the conformal classifier is, in a sense, a point estimate of the credible outcomes of a model, using the value estimated for $p_+$ as well as knowledge about which of these were associated to the correct label in the training data. A location is defined as included in the range is the positive outcome is included within the credible set returned by the conformal classifier, and as excluded from the range when it is not. Because the conformal classifier can identify that both outcomes are credible based on the training data (while giving them different weights), predictions in which both the positive and negative outcomes are included in the credible set can be seen as "uncertain" at this given risk level.
 
@@ -195,8 +195,6 @@ In the rest of this analysis, I will set $alpha = 0.05$. As noted by #cite(<Ange
 Mondrian method for CP TK ref - important to have coverage for each class because of massive class balance issues
 
 Risk aware - not interested in uncertainty of presence v absence in the same way depending on biodiversity situation: compare invasion v. threatened species
-
-In this manuscript, I employ the later method, as it provides a rapid and statistically acceptable estimate of $accent(q, hat)$, without requiring too much computing time.
 ]
 
 = Results
