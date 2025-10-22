@@ -11,7 +11,6 @@ Random.seed!(42069)
 # Load the functions we need here
 include("utils/theme.jl")
 include("utils/lib.jl")
-#include("utils/cellsize.jl")
 include("utils/novelty.jl")
 include("utils/data.jl")
 
@@ -29,7 +28,7 @@ end
 δ = 1.05 # Tapering for distance
 presencelayer = mask(first(L), records)
 background = pseudoabsencemask(DistanceToEvent, presencelayer)
-bgpoints = backgroundpoints(nodata(background, d -> d < 20) .^ δ, 3sum(presencelayer))
+bgpoints = backgroundpoints(nodata(background, d -> d < 10) .^ δ, 5sum(presencelayer))
 
 # Map of occurrences
 f = Figure()
@@ -88,13 +87,14 @@ prd = predict(sdm, L; threshold=false)
 
 renderfigure("prediction")
 
-cs = cellsize(prd)
+cs = cellarea(prd)
 
 cmodel = deepcopy(sdm)
 
 # Sensitivity analysis for the miscoverage rate
-rlevels = LinRange(0.01, 0.2, 250)
-qs = [_estimate_q(cmodel, holdout(cmodel)...; α=u) for u in rlevels]
+rlevels = LinRange(0.01, 0.2, 50)
+miscoverage_holdout = holdout(cmodel)
+qs = [_estimate_q(cmodel, miscoverage_holdout...; α=u) for u in rlevels]
 surf_presence = zeros(length(qs))
 surf_undet = zeros(length(qs))
 surf_unsure = zeros(length(qs))
@@ -119,7 +119,7 @@ for i in eachindex(qs)
 end
 
 # Cross-conformal with median range selected
-q = median([_estimate_q(cmodel, fold...; α=0.05) for fold in kfold(cmodel; k=10)])
+q = median([_estimate_q(cmodel, fold...; α=0.1) for fold in folds])
 Cp, Ca = credibleclasses(prd, q)
 
 # Partition
@@ -131,8 +131,10 @@ unsure_out = unsure .& (.!distrib)
 
 renderfigure("uncertainty")
 
+
+
 # Example with unknown areas
-q2 = median([_estimate_q(cmodel, fold...; α=0.2) for fold in kfold(cmodel; k=10)])
+q2 = median([_estimate_q(cmodel, fold...; α=0.1) for fold in kfold(cmodel; k=10)])
 Cp2, Ca2 = credibleclasses(prd, q2)
 undet = .!(Cp2 .| Ca2)
 
