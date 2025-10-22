@@ -10,9 +10,21 @@ Random.seed!(42069)
 
 # Load the functions we need here
 include("utils/theme.jl")
-include("utils/lib.jl")
+include("utils/conformal.jl")
 include("utils/novelty.jl")
 include("utils/data.jl")
+
+# TODO figure of the q+ and q- when changing the coverage threshold to demo Mondrian
+
+# cp = [credible(y, (q₊, q₋)) for y in predict(model; threshold=false)]
+# 
+# uncertain = (x -> length(credible(x, (q₊, q₋)))).(U)
+# heatmap(predict(model, L), colormap=[:white, :darkgreen])
+# heatmap!(uncertain, colormap=[:transparent, :grey70])
+# contour!(predict(model, L), color=:darkgreen)
+# lines!(landmass, color=:black)
+# scatter!(presencelayer, color=:lime, markersize=4)
+# current_figure()
 
 # Paths to store outputs
 fpath = joinpath(@__DIR__, "figures")
