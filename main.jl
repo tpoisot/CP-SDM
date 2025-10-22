@@ -1,5 +1,6 @@
 using CairoMakie
 using SpeciesDistributionToolkit
+const SDT = SpeciesDistributionToolkit
 using Statistics
 import Downloads
 import Dates

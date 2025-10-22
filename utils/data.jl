@@ -1,3 +1,4 @@
+#=
 if ~isfile("occurrences.csv")
     Downloads.download("https://raw.githubusercontent.com/tpoisot/ConformalSDM/refs/heads/main/data/occurrences.csv", "occurrences.csv")
 end
@@ -7,18 +8,25 @@ class_a = filter(contains("Class A"), occlines)
 valid_info = [split(obs, ",")[end-2:end] for obs in class_a]
 
 datefun = (s) -> Dates.Date(s, Dates.dateformat"yyyy-mm-ddTH:M:SZ")
+=#
 
-records = [Occurrence(what="Bigfoot", when=datefun(r[1]), where=(parse(Float64, r[3]), parse(Float64, r[2]))) for r in valid_info]
+records = OccurrencesInterface.__demodata();
 
+gadm_usa_level1 = getpolygon(PolygonData(GADM, Countries); level=1, country="USA")
+
+# Get the states
 polygons = [
-    SpeciesDistributionToolkit.gadm("USA", "Oregon"),
-    SpeciesDistributionToolkit.gadm("USA", "California"),
-    SpeciesDistributionToolkit.gadm("USA", "Nevada"),
-    SpeciesDistributionToolkit.gadm("USA", "Idaho"),
-    SpeciesDistributionToolkit.gadm("USA", "Washington")
+    gadm_usa_level1["Oregon"],
+    gadm_usa_level1["California"],
+    gadm_usa_level1["Nevada"],
+    gadm_usa_level1["Idaho"],
+    gadm_usa_level1["Washington"]
 ]
 
-extent = SpeciesDistributionToolkit._reconcile(SpeciesDistributionToolkit.boundingbox.(polygons))
+# We merge the states (but keep the borders)
+landmass = vcat(polygons...)
+
+extent = SDT.boundingbox(landmass)
 
 provider = RasterData(WorldClim2, BioClim)
 prj = Projection(SSP370, MRI_ESM2_0)
