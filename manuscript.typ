@@ -24,7 +24,7 @@
   #v(2em)
   #set text(13pt, weight: "bold", font: "Libertinus Sans")
   #smallcaps(it.body)
-  #v(2em)
+  #v(1.8em)
 ]
 
 #show heading.where(
@@ -33,7 +33,16 @@
   #v(1.5em)
   #set text(12pt, weight: "regular", font: "Libertinus Sans")
   #smallcaps(it.body)
-  #v(1.0em)
+  #v(1.8em)
+]
+
+#show heading.where(
+  level: 3,
+): it => block(width: 100%)[
+  #v(1em)
+  #set text(12pt, style: "italic", font: "Libertinus Sans")
+  #it.body
+  #v(1.5em)
 ]
 
 #let titlepage(data) = block[
@@ -52,7 +61,7 @@
   #v(5fr)
 ]
 
-#titlepage(json("metadata.json"))
+// #titlepage(json("metadata.json"))
 #pagebreak()
 
 // Editing marks
