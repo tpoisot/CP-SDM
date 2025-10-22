@@ -1,7 +1,7 @@
 #set par.line(numbering: "1")
 #set page(numbering: "1 of 1")
-#set text(font: "STIX Two Text")
-#show math.equation: set text(font: "STIX Two Math")
+#set text(font: "Libertinus Serif")
+#show math.equation: set text(font: "Libertinus Math")
 #set math.equation(numbering: "(1)")
 #show table.cell.where(y: 0): strong
 
@@ -85,7 +85,7 @@ All analyses are conducted using the `SpeciesDistributionToolkit` package #cite(
 
 === Model structure
 
-The model used here is a logistic regression, with interactions terms up to a maximum degree of two (preliminary analyses with random forests, naive Bayes classifiers, and rotation forests gave similar results). When trained on a vector of features $bold(x)_i$ (with null means and unit variances), the model will return a probability $p_+$, which correspond to the probability of these environmental conditions being associated to the presenceof the species. This probability is turned into a presence/absence decision by comparing it to a threshold, as explained in a later section. Because this logistic regression is a deterministic classifier, the prediction $p_i+$ statisfies $0 <= p_i+ <= 1$, and we use $p_- = 1 - p_+$ as the probability that the species is absent from the location.
+The model used here is a logistic regression, with interactions terms up to a maximum degree of two (preliminary analyses with random forests, naive Bayes classifiers, and rotation forests gave similar results). When trained on a vector of features $bold(x)_i$ (with null means and unit variances), the model will return a probability $p_+$, which correspond to the probability of these environmental conditions being associated to the presence of the species. This probability is turned into a presence/absence decision by comparing it to a threshold, as explained in a later section. Because this logistic regression is a deterministic classifier, the prediction $p_(i+)$ (the probability associated to the prediction of "presence" for prediction $i$) satisfies $0 <= p_(i+) <= 1$, and we use $p_- = 1 - p_+$ as the probability that the species is absent from the location.
 
 === Tuning
 
@@ -164,7 +164,7 @@ table(
   [TSS], [0.74], [0.75], [0.76],
   [Accuracy], [0.91], [0.91], [0.91],
 ),
-caption: [Overview of measures of model performance for the validation and training sets of the SDM, as well as the same measures for the ensemble model (measured on the out-of-bag models only). The values of $kappa$ and the true-skill statistic are generally comparable to the MCC, but are included as they are commonly reported in the SDM litterature #cite(<Allouche2006>). The high values of the negative and positive predictive values indicate that the model is suitable to detect both presences and absences.],
+caption: [Overview of measures of model performance for the validation and training sets of the SDM, as well as the same measures for the ensemble model (measured on the out-of-bag models only). The values of $kappa$ and the true-skill statistic are generally comparable to the MCC, but are included as they are commonly reported in the SDM litterature #cite(<Allouche2006>). The high values of the negative and positive predictive values indicate that the model is suitable to detect both presences and absences. NPV and PPV are, respectively, the negative and positive predictive values, which indicate the ability of the classifier to make reliable predictions for the negative and positive outcomes.],
 placement: auto,
 ) <table-performance>
 
@@ -180,7 +180,7 @@ Before applying CP, it is useful to examine the output of the SDM in space. The 
 
 == Conformal prediction of the species range
 
-Before discussing the spatial output of running the conformal model, it is worth considering why the thresholding step as visualized in #ref(<predictions>) is not really providing us with a set of certain presences and absences. When optimizing the threshold $tau$ above which a prediction $p_+$ from the non-conformal model is determined to be a presence, we inherently establish a sort of certain presences and certain absences, specifically by ignoring the possibility that there can be uncertain predictions. Indeed, the space covered by positive predictions is usually interpreted as the (potential) distribution of the species. But this prediction conveys a false sense of certainty, that has to do with the very nature of the threshold we optimize. By definition, the threshold is the value that finds the best balance between the false/true positive/negative cases on the validation data; this is in fact why the optimal threshold is the point closest to the corners of the ROC and PR curves indicating a perfect classifier #cite(<Balayla2020>). When a prediction $p_+$ gets closer to the threshold, a small perturbation to the environmental conditions locally could bring it on the other side of the threshold, and therefore flip the predicted class using the non-conformal classifier. Around the threshold is where we expect uncertainty to be the greatest.
+Before discussing the spatial output of running the conformal model, it is worth considering why the thresholding step as visualized in #ref(<predictions>) is not really providing us with a set of certain presences and absences. When optimizing the threshold $tau$ above which a prediction $p_+$ from the non-conformal model is determined to be a presence, we inherently establish a sort of certain presences and certain absences, specifically by ignoring the possibility that there can be uncertain predictions. Indeed, the space covered by positive predictions is usually interpreted as the (potential) distribution of the species. But this prediction conveys a false sense of certainty, that has to do with the very nature of the threshold we optimize. By definition, the threshold is the value that finds the best balance between the false/true positive/negative cases on the validation data for a given measure of model optimality; this is in fact why the optimal threshold is the point closest to the corners of the ROC and PR curves indicating a perfect classifier #cite(<Balayla2020>). When a prediction $p_+$ gets closer to the threshold, a small perturbation to the environmental conditions locally could bring it on the other side of the threshold, and therefore flip the predicted class using the non-conformal classifier. Around the threshold is where we expect uncertainty to be the greatest.
 
 To bring these considerations into a spatial context: we expect the areas where the score for the present class are closer to the threshold (the limits of the predicted range of the species) to be the most uncertain. Importantly, this is true _both_ for areas that are inside the range (for which $p_+$ is just above the threshold) and for areas that are outside of it (for which $p_+$ is just below the threshold). CP is perfectly suited to solving this issue, by identifying the areas where one class is predicted, but the other class is also credible. In this section, we will project the areas with uncertain predictions, and compare the uncertainty quantified by the conformal model to the uncertainty derived from the ensemble model.
 
