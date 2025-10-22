@@ -65,7 +65,7 @@
 #pagebreak()
 
 // Editing marks
-#let add(body) = text(fill: rgb(0, 100, 0), weight: "bold")[#highlight(body, fill: rgb(250, 250, 240))]
+#let add(body) = text(fill: rgb(0, 100, 0))[#highlight(body, fill: rgb(250, 250, 240))]
 #let change(body) = text(fill: rgb(0, 100, 100))[#underline(body, stroke: rgb(0, 90, 90))]
 #let cut(body) = text(fill: rgb(150, 150, 150))[#strike(body, stroke: rgb(100, 0, 0))]
 #show "TK": text(weight: "bold", fill: rgb("#e08619"))[TK]
@@ -165,7 +165,7 @@ $
 s_+ = (exp p_+)/(exp p_+ + exp (1- p_+)), s_- = (exp (1 - p_+))/(exp p_+ + exp (1- p_+))
 $ <equation-softmax>
 
-The conformal score associated to a prediction is $1 - s_dot$, where $dot$ is the prediction ($+$ or $-$) made by the model. We call the distribution of conformal scores $cal(S)$. Note that this can be done without using the $text("softmax")$ function, but it is included here as it is best practice for classification.
+The conformal score associated to a prediction is $1 - s_dot$, where $dot$ is the prediction ($+$ or $-$) made by the model. We call the distribution of conformal scores $cal(S)$. Note that this can be done without using the $text("softmax")$ function #add[(_i.e._ $s_+ = p_+$, $s_- = 1 - p_+$)], but it is #change[used] here as it is best practice for classification TK.
 
 The next step is to identify a critical value $accent(q, hat)$ above which a conformal score indicates that the prediction it describes is credible. This critical value is picked by examining the empirical quantile distribution of the conformal scores calculated over $n$ training examples, and an acceptable level of risk $alpha$ (explained in depth in the next sub-section), and specifically by identifying the $q_i$-th quantile, where 
 
@@ -175,7 +175,7 @@ $ <equation-quantile>
 
 The corresponding value of $S$ below which a proportion $q_i$ of values lies is $accent(q, hat)$. In other, more intuitive words, the value $q_i$ indicates what proportion of wrong classification events we must accept before we have accumulated enough evidence to be confident about a prediction. When performing the prediction, we calculate the score of a new prediction according to #ref(<equation-softmax>). For every possible class $x$, if $s_x >= (1 - accent(q, hat))$, this class is retained as part of the credible set.
 
-The value of $accent(q, hat)$ can be obtained either through using a holdout set for training (Split Conformal Prediction), by retraining the model in a way aking to Leave-One-Out cross-validation (Full Conformal Prediction), through the use of quantile regression #cite(<Romano2019>), or through taking the median of several estimates of $accent(q, hat)$ after cross-validation #cite(<Vovk2018>). In this manuscript, I employ the later method, as it provides a rapid and statistically acceptable estimate of $accent(q, hat)$, without requiring too much computing time.
+The value of $accent(q, hat)$ can be obtained either through using a holdout set for training (Split Conformal Prediction), by retraining the model in a way aking to Leave-One-Out cross-validation (Full Conformal Prediction), through the use of quantile regression #cite(<Romano2019>), or through taking the median of several estimates of $accent(q, hat)$ after cross-validation #cite(<Vovk2018>).
 
 To summarize, the output of the conformal classifier is, in a sense, a point estimate of the credible outcomes of a model, using the value estimated for $p_+$ as well as knowledge about which of these were associated to the correct label in the training data. A location is defined as included in the range is the positive outcome is included within the credible set returned by the conformal classifier, and as excluded from the range when it is not. Because the conformal classifier can identify that both outcomes are credible based on the training data (while giving them different weights), predictions in which both the positive and negative outcomes are included in the credible set can be seen as "uncertain" at this given risk level.
 
@@ -188,6 +188,16 @@ CP allows users to set a desired error rate, $alpha$, which appeared in #ref(<eq
 Chaning the risk level $alpha$ leads to different estimates of how commonly multiple classes will be accepted as a credible outcome. Using a low level of risk ($alpha approx 0$) yields usually leads to all outcomes being credible ($accent(q, hat) approx 1$), at the cost of a very high uncertainty. When values of $alpha$ get too large ($accent(q, hat) approx 0$), no class can be confidently predicted, and the model will eventually always return $C = emptyset$. Although this later situation is more difficult to make sense of intuitively, a value of inefficiency that gets smaller than unity should be interpreted as a model that accumulates more uncertainty (at a given risk level) than the data can support #cite(<Romano2020>). Conformal prediction can therefore inform us on the acceptable risk levels we can operate under given a trained predictive model.
 
 In the rest of this analysis, I will set $alpha = 0.05$. As noted by #cite(<Angelopoulos2023a>, form: "prose"), this corresponds to estimating whether a specific prediction falls within, or outside of, the 95% confidence interval across all predictions, which is a convenient callback to frequentist statistics' usual risk tolerance. Recall that the CP credible sets are estimated based on the model output, and therefore even when aiming for full coverage, there may be non-ambiguous combinations of environmental predictors.
+
+#add[
+== Important variants on CP that are relevant for SDMs
+
+Mondrian method for CP TK ref - important to have coverage for each class because of massive class balance issues
+
+Risk aware - not interested in uncertainty of presence v absence in the same way depending on biodiversity situation: compare invasion v. threatened species
+
+In this manuscript, I employ the later method, as it provides a rapid and statistically acceptable estimate of $accent(q, hat)$, without requiring too much computing time.
+]
 
 = Results
 

@@ -40,10 +40,10 @@ scatter!(ax, bgpoints; markersize=5, color=:grey50)
 current_figure()
 
 # Set up the model - logistic regression with Z-score before
-sdm = SDM(ZScore, Logistic, L, presencelayer, bgpoints)
-hyperparameters!(classifier(sdm), :η, 1e-3) # Slow descent
-hyperparameters!(classifier(sdm), :interactions, :all) # All interactions
-hyperparameters!(classifier(sdm), :epochs, 10000) # Longer training
+sdm = SDM(ZScore, NaiveBayes, L, presencelayer, bgpoints)
+#hyperparameters!(classifier(sdm), :η, 1e-3) # Slow descent
+#hyperparameters!(classifier(sdm), :interactions, :all) # All interactions
+#hyperparameters!(classifier(sdm), :epochs, 10000) # Longer training
 
 # Folds
 folds = kfold(sdm)
