@@ -52,10 +52,10 @@ scatter!(ax, bgpoints; markersize=5, color=:grey50)
 current_figure()
 
 # Set up the model - logistic regression with Z-score before
-sdm = SDM(ZScore, NaiveBayes, L, presencelayer, bgpoints)
-#hyperparameters!(classifier(sdm), :η, 1e-3) # Slow descent
-#hyperparameters!(classifier(sdm), :interactions, :all) # All interactions
-#hyperparameters!(classifier(sdm), :epochs, 10000) # Longer training
+sdm = SDM(ZScore, Logistic, L, presencelayer, bgpoints)
+hyperparameters!(classifier(sdm), :η, 1e-3) # Slow descent
+hyperparameters!(classifier(sdm), :interactions, :all) # All interactions
+hyperparameters!(classifier(sdm), :epochs, 10000) # Longer training
 
 # Folds
 folds = kfold(sdm)
@@ -99,6 +99,7 @@ prd = predict(sdm, L; threshold=false)
 renderfigure("prediction")
 
 # this is where the experiments start
+
 mc_q = [conformal(sdm, f...; α=0.05) for f in kfold(sdm)]
 q₊, q₋ = vec(median(vcat([hcat(q...) for q in mc_q]...), dims= 1))
 
@@ -118,9 +119,14 @@ cs = cellarea(prd)
 cmodel = deepcopy(sdm)
 
 # Sensitivity analysis for the miscoverage rate
-rlevels = LinRange(0.01, 0.2, 50)
+rlevels = LinRange(0.015, 0.2, 50)
 miscoverage_holdout = holdout(cmodel)
-qs = [_estimate_q(cmodel, miscoverage_holdout...; α=u) for u in rlevels]
+qs = [conformal(cmodel, miscoverage_holdout...; α=u) for u in rlevels]
+
+lines(rlevels, [q[1] for q in qs])
+lines!(rlevels, [q[2] for q in qs])
+current_figure()
+
 surf_presence = zeros(length(qs))
 surf_undet = zeros(length(qs))
 surf_unsure = zeros(length(qs))
@@ -128,7 +134,7 @@ surf_unsure_presence = zeros(length(qs))
 surf_unsure_absence = zeros(length(qs))
 
 𝐏 = predict(sdm; threshold=false)
-eff = [mean(length.(credibleclasses.(𝐏, q))) for q in qs]
+eff = [mean(length.(credibleclasses.(𝐏, q...))) for q in qs]
 
 for i in eachindex(qs)
     Cp, Ca = credibleclasses(prd, qs[i])
