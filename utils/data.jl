@@ -7,8 +7,8 @@ gadm_usa_level1 = getpolygon(PolygonData(GADM, Countries); level=1, country="USA
 # Now we get the states we want to include in the model
 polygons = [
     gadm_usa_level1["California"],
-    gadm_usa_level1["Idaho"],
-    gadm_usa_level1["Nevada"],
+    #gadm_usa_level1["Idaho"],
+    #gadm_usa_level1["Nevada"],
     gadm_usa_level1["Oregon"],
     gadm_usa_level1["Washington"],
 ]

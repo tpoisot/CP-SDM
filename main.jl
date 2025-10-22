@@ -45,8 +45,6 @@ hyperparameters!(classifier(sdm), :η, 1e-3) # Slow descent
 hyperparameters!(classifier(sdm), :interactions, :all) # All interactions
 hyperparameters!(classifier(sdm), :epochs, 10000) # Longer training
 
-train!(sdm)
-
 # Folds
 folds = kfold(sdm)
 
@@ -133,7 +131,7 @@ unsure_out = unsure .& (.!distrib)
 renderfigure("uncertainty")
 
 # Example with unknown areas
-q2 = median([_estimate_q(cmodel, fold...; α=0.15) for fold in folds])
+q2 = median([_estimate_q(cmodel, fold...; α=0.3) for fold in folds])
 Cp2, Ca2 = credibleclasses(prd, q2)
 undet = .!(Cp2 .| Ca2)
 
