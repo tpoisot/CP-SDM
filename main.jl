@@ -28,7 +28,7 @@ end
 δ = 1.05 # Tapering for distance
 presencelayer = mask(first(L), records)
 background = pseudoabsencemask(DistanceToEvent, presencelayer)
-bgpoints = backgroundpoints(nodata(background, d -> d < 10) .^ δ, 5sum(presencelayer))
+bgpoints = backgroundpoints(nodata(background, d -> d < 5) .^ δ, 6sum(presencelayer))
 
 # Map of occurrences
 f = Figure()

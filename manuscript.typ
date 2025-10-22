@@ -1,48 +1,74 @@
-#set par.line(numbering: "1")
-#set page(numbering: "1 of 1")
-#set text(font: "Libertinus Serif")
+#set text(font: "Libertinus Serif", size: 12pt)
 #show math.equation: set text(font: "Libertinus Math")
-#set math.equation(numbering: "(1)")
-#show table.cell.where(y: 0): strong
+#set page(paper: "us-letter", margin: 1in)
+
+#set table.hline(stroke: .6pt)
+#show figure.caption: it => {
+  context {
+    set align(left)
+    set par(leading: 0.42em, hanging-indent: 20pt, justify: false)
+    (
+      text(10pt, it.supplement + " " + it.counter.display() + ": ", weight: "semibold", font: "Libertinus Sans")
+        + text(10pt, it.body, font: "Libertinus Sans", luma(20%))
+    )
+  }
+}
+#show figure.where(
+  kind: table,
+): set figure.caption(position: top)
+
+
+#show heading.where(
+  level: 1,
+): it => block(width: 100%)[
+  #v(2em)
+  #set text(13pt, weight: "bold", font: "Libertinus Sans")
+  #smallcaps(it.body)
+  #v(2em)
+]
+
+#show heading.where(
+  level: 2,
+): it => block(width: 100%)[
+  #v(1.5em)
+  #set text(12pt, weight: "regular", font: "Libertinus Sans")
+  #smallcaps(it.body)
+  #v(1.0em)
+]
+
+#let titlepage(data) = block[
+  // #place(bottom + right, dy: 50pt, dx: 70pt, image("logo.png", width: 18%))
+  #v(2fr)
+  #set par(spacing: 1em, leading: 0.3em, justify: false)
+  #text(data.title, size: 30pt, font: "Libertinus Sans", weight: "regular")
+  #v(1fr)
+  #for (author) in data.authors {
+    text(author.name, font: "Libertinus Sans")
+    linebreak()
+    text(author.institution)
+    linebreak()
+    linebreak()
+  }
+  #v(5fr)
+]
+
+#titlepage(json("metadata.json"))
+#pagebreak()
 
 // Editing marks
 #let add(body) = text(fill: rgb(0, 0, 0))[#highlight(body, fill: rgb(180, 250, 140))]
 #let change(body) = text(fill: rgb(0, 100, 100))[#underline(body, stroke: rgb(0, 90, 90))]
 #let cut(body) = text(fill: rgb(150, 150, 150))[#strike(body, stroke: rgb(100, 0, 0))]
-
-#show figure.caption: it => {
-  set align(left)
-  set par(leading: 0.55em, hanging-indent: 0pt, justify: false)
-  text(10pt, it)
-}
-
-#set par(leading: 1.6em, spacing: 2.2em, first-line-indent: 0pt)
-#show heading.where(level: 1): set text(14pt, rgb("#114f54"), font: "Inter", weight: "medium")
-#show heading.where(level: 2): set text(13pt, rgb("#2e5385"), font: "Inter", weight: "regular", style: "italic")
-#show heading.where(level: 1): it => block(width: 100%)[
-    #v(3.2em)
-    #block(it.body)
-    #v(1em)
-  ]
-#show heading.where(level: 2): it => block(width: 100%)[
-    #v(2.1em)
-    #block(it.body)
-    #v(1em)
-  ]
-#show heading.where(level: 3): it => block(width: 100%)[
-    #v(1.2em)
-    #block(it.body)
-    #v(1.2em)
-  ]
-
-#text(18pt, rgb("#1d8265"), weight: "light",  font: "Inter", "Conformal Prediction quantifies the uncertainty of Species Distribution Models")
-#v(4em, weak: true)
-Timothée Poisot --- Département de Sciences Biologiques, Université de Montréal, Montréal QC, Canada   
-
-`timothee.poisot@umontreal.ca`
-#v(10em, weak: true)
+#show "TK": text(weight: "bold", fill: rgb(100, 0, 0))["!! TK !!"]
 
 *Abstract*: Providing accurate estimates of uncertainty is key for the analysis, adoption, and interpretation of species distribution models. In this manuscript, through the analysis of data from an emblematic North American cryptid, I illustrate how Conformal Prediction allows fast and informative uncertainty quantification. I discuss how the conformal predictions can be used to gain more knowledge about the importance of variables in driving presences and absences, and how they help assess the importance of climatic novelty when projecting the models under future climate change scenarios.
+
+#pagebreak()
+
+#set page(numbering: "1 of 1")
+#set par(leading: 1.8em, spacing: 2.5em, justify: false)
+#set par.line(numbering: n => text(size: 10pt, font: "Libertinus Sans", luma(60%))[#n])
+#set math.equation(numbering: "(1)")
 
 = Introduction
 
@@ -68,7 +94,7 @@ The occurrence data used in this article are geo-referenced observations of the 
 
 === Pseudo-absences generation
 
-The dataset of observations is composed only of presences. In order to establish a baseline of absences to train a binary classifier, there is a need to generate a number of pseudo-absences, which simulates locations at which the species, if not absent, has not been observed. In order to do so, the presence data were first spatially thinned to be limited to one for each cell, at a 5.0 minutes of arc resolution. Cells that had no observation were potential candidates for a pseudo-absence, and were further selected by drawing a number of them, without replacement, where the probability of inclusion in the sample was proportional to $h _ "min" ^(-1)$, where $h _ "min"$ is the Haversine (great arc) distance to the nearest cell with an observation, measured in kilometers. In other words, cells that were close to an observation were unlikely to be included, and cells that were further away were more likely to be so. To avoid sampling pseudo-absences too close to presences, the pixels less than 10 kilometers away from known observations were excluded from the background data.
+The dataset of observations is composed only of presences. In order to establish a baseline of absences to train a binary classifier, there is a need to generate a number of pseudo-absences, which simulates locations at which the species, if not absent, has not been observed. In order to do so, the presence data were first spatially thinned to be limited to one for each cell, at a 5.0 minutes of arc resolution. Cells that had no observation were potential candidates for a pseudo-absence, and were further selected by drawing a number of them, without replacement, where the probability of inclusion in the sample was proportional to $h _ "min" ^(-1)$, where $h _ "min"$ is the Haversine (great arc) distance to the nearest cell with an observation, measured in kilometers. In other words, cells that were close to an observation were unlikely to be included, and cells that were further away were more likely to be so. To avoid sampling pseudo-absences too close to presences, the pixels less than 10 kilometers away from known observations were excluded from the background data. #add[This method of pseudo-absence selection is usually referred to as "background thickening", and seeks to increase the importance of locations that are further from observations when picking pseudo-absences TK.]
 
 The number of pseudo-absences was arbitrarily set to two times the number of presences. Although #cite(<Barbet-Massin2012>, form: "prose") recommend to use the same number of presences and pseudo-absences for classifiers, using an imbalanced dataset is not a problem: stratified k-folds cross-validation is perfectly able to handle the moderate class imbalance we introduce #cite(<Szeghalmy2023>), and the model performance (as will be established in a later section) is sufficient. Moreover, most real-world applications of classification will have to deal with problems with class imbalance (this is particularly likely to be true of SDM application from sampling data, where presences may be the minority of outcomes); it is therefore important to ensure that we do not establish a testing scenario that is too optimistic about the prevalence of presences. In all cases, class imbalances is a feature of data that must be dealt with in order to get the more predictive models #cite(<Benkendorf2023>).
 
@@ -243,6 +269,8 @@ Based on the comparison between the baseline (#ref(<predictions>, supplement: "f
 
 By applying these rules on the predicted changes in presence/absence status, we can identify large areas that are confidently loss towards the Southern edge of the species's range, with very limited areas of either possible or sure gain, strongly suggesting that this species would undergo range contraction. Note that the area corresponding to ambiguous transitions is relatively large, which provides a good understanding of the possible variation to be expected under this climate change scenario.
 
+#add[exchangeability and is it a problem with climate change? no, only refers to training data, but is an issue if training on time series -- can be handled by inductive and split, or other methods]
+
 == Conformal prediction and climatic novelty
 
 #cite(<Zurell2012>, form: "prose") highlight the importance of fully considering uncertainty when transferring the model to novel climate data: there is a chance that the future climate conditions will not have occurred in the training dataset, and therefore our confidence in the model outcome should be lowered. This covariate shift is well documented to decrease the performance of models #cite(<Mesgaran2014>), and CP offers an opportunity to shine a different light on this phenomenon.
@@ -259,8 +287,21 @@ This task is particularly crucial given that entirely novel climatic conditions 
 
 Conformal prediction, like most SDM methods, is not quite delivering a true estimate of the probability of presence #cite(<Phillips2013>). Nevertheless, it brings valuable information, in the form of a quantified measure of whether a prediction comes with uncertainty (are both presence and absence in the credible set?) in a way that is directly comparable with the non-conformal prediction. "Class overlap", where both presences and absences are observed under the same values of the predictions, decreases the predictive performance of models #cite(<Valavi2021>) --- CP is naturally suited at handling this, by assigning the area where overlap occurs to uncertain predictions.
 
+#add[Previous use of CP but for a confidence interval -- suggests we need to figure out if we want to treat SDM as regression or classification problems, or at least usefulness of either approaches]
+
+#add[ACI also emerging as different methodology achieving similar goals with similar statistical guarantees]
+
 Transparent communication of uncertainty, meaning that it is both spatially explicit, quantified, and expressed under a risk set by the user, is important: we do not expect a fully trained model to always be certain, as some areas are genuinely more difficult to predict. For example, small organisms are more inherently stochastic #cite(<Soininen2013>); any form of stochastic event will drive species distribution even when there is strong environmental signal #cite(<Mohd2016>); these stochastic events can even manifest in areas that are close to the species' environmental optimum #cite(<Dallas2020>). For these reasons, CP can produce interpretable estimates of uncertainty in species distribution models, and does not require the adoption of additional modeling tools or paradigms as it functions on an already trained model.
 
 CP contributes to dispel what #cite(<Messeri2024>, form: "prose") called the "illusion of understanding", which is often associated with ML models: it generates an understanding of the uncertainty from observations of a pre-trained model, and expresses this uncertainty both in absolute (is the "presence" event in the credible set?) and relative (is the point estimate of the score for presence larger than for absence?) terms. Because this technique is computationally efficient and works on pre-trained models, it opens up the opportunity for more systematic uncertainty quantification #cite(<Zurell2020>) in SDMs. CP, in short, can deliver the "maps of ignorance" that #cite(<Rocchini2011>, form: "prose") argued for: how difficult is it to make a prediction for the range at a given risk level is, in and of itself, an important information to frame the reliability of the results. Finally, CP can provide guidance on the feedback loop between SDM training and field validation #cite(<Johnson2023>) --- areas where the range is certain are a much lower priority for sampling.
 
+#pagebreak()
+
+#set par(spacing: 1.5em, leading: 1.5em, justify: false)
 #bibliography("references.bib", style: "annual-reviews-author-date")
+
+#pagebreak()
+
+#set figure(numbering: n => [S#n])
+#counter(figure.where(kind: image)).update(0)
+#counter(figure.where(kind: table)).update(0)
