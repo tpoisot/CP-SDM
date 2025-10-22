@@ -1,7 +1,27 @@
 #set text(font: "Libertinus Sans")
 #show math.equation: set text(font: "Libertinus Math")
 
-#let response(body) = block(fill: color.hsl(195deg, 100%, 98%), inset: 1em, radius: 0.1em, width: 100%, stroke: 0.1mm + color.hsv(195deg, 100%, 45%))[*Response:* #body]
+#let response(ed: false, body) = block(fill: color.hsl(195deg, 100%, 98%), inset: 1em, radius: 0.15em, width: 100%, stroke: 0.1mm + color.hsv(195deg, 100%, 45%))[
+  #if ed == true {
+    text(weight: "bold")[Comments for the editor]
+    linebreak()
+    linebreak()
+  } else {
+    text(weight: "bold")[Response:]
+  }
+  #body
+]
+
+#let add(body) = text(fill: rgb(0, 100, 0), weight: "bold")[#highlight(body, fill: rgb(250, 250, 240))]
+#let change(body) = text(fill: rgb(0, 100, 100))[#underline(body, stroke: rgb(0, 90, 90))]
+#let cut(body) = text(fill: rgb(150, 150, 150))[#strike(body, stroke: rgb(100, 0, 0))]
+#show "TK": text(weight: "bold", fill: rgb("#e08619"))[TK]
+
+#response(ed: true)[
+  We have ...
+
+  The changes are also presented in a track changed manuscript uploaded as a document for reviewers, which indicates #add[additions], #change[changes], and #cut[deletions] to the text following comments made by both reviewers.
+]
 
 = Reviewer 1
 

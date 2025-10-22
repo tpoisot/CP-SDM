@@ -68,7 +68,7 @@
 #let add(body) = text(fill: rgb(0, 100, 0), weight: "bold")[#highlight(body, fill: rgb(250, 250, 240))]
 #let change(body) = text(fill: rgb(0, 100, 100))[#underline(body, stroke: rgb(0, 90, 90))]
 #let cut(body) = text(fill: rgb(150, 150, 150))[#strike(body, stroke: rgb(100, 0, 0))]
-#show "TK": text(weight: "bold", fill: rgb(100, 0, 0))["!! TK !!"]
+#show "TK": text(weight: "bold", fill: rgb("#e08619"))[TK]
 
 *Abstract*: Providing accurate estimates of uncertainty is key for the analysis, adoption, and interpretation of species distribution models. In this manuscript, through the analysis of data from an emblematic North American cryptid, I illustrate how Conformal Prediction allows fast and informative uncertainty quantification. I discuss how the conformal predictions can be used to gain more knowledge about the importance of variables in driving presences and absences, and how they help assess the importance of climatic novelty when projecting the models under future climate change scenarios.
 
