@@ -65,7 +65,7 @@ There appears to be errors in the mathematical definition of the conformity scor
 
 A variety of score functions are used, even for binary classification, so I think an introduction to CP for SDM should assess the pros and cons of these.
 
-#response[]
+#response[the reviewer is correct in that a nunmber of CP techniques are used -- these are now more explicitely mentioned in the manuscript, and a section has been added to pinpoint two techniques with particular relevance to SDMs.]
 
 Various abuse of terms, including "species" (Is it?), "presence", "absence" -> This is misleading as you work with PO with many "false absences". This leads to the even more misleading term "sure absence" when it comes to CP credible sets
 
@@ -77,19 +77,19 @@ I demand a consistent change of terms, as for instance "presence" should rather 
 
 It would be interesting to developp and clarify the comparison between bootstrap and CP, or even better evaluate the alignment empirically.
 
-#response[]
+#response[the reviewer made several specific comments about this point here and later on, and I have adressed them in the revision. My specific comments and a list of changes made are presented in response to each of these specific comments.]
 
 Fig.3.C suggests that the uncertainty quantification of bootstrap aligns with the one of CP which makes sense, but i'm also not surprised that the link between IQR of ensemble predictions and CP categories is not strong because you're probably not comparing the right quantities. Indeed, uncertainty quantification with bootstrap ensemble should also account for the mean predicted value, not only for the variability/IQR.
 
-#response[the use of bootstrap variability to evaluate uncertainty, and of the original model to report the prediction, is common in SDMs. I have clarified this information in the text, alongside additional references. For this reason, I maintain that the current approach is valid, and have made no changes to the manuscript beyond this clarification.]
+#response[the use of bootstrap variability to evaluate uncertainty, and of the original model to report the prediction, is common in SDMs. I have clarified this information in the text, alongside additional references. For this reason, I maintain that the current approach is valid. I have also added a clarification about how the bootstrap variability _v._ uncertainty coming from the CP prediction can be used to suggest different types of sampling, namely more data for model training and more data for model validation.]
 
 A key difference between CP predictive sets vs any ensemble based predictive set, is that, unless the ensemble model prediction is perfectly calibrated to the real probability p(Y=1|X) (unrealistic), the latter don't provide the minimum coverage guarantee of CP, i.e. they don't inform about (absolute) predictive error. 
 
-#response[]
+#response[this is correct. As no claim to that effect is made in the manuscript, and that the reviewer does not seem to direct this comment at a specific claim made in the manuscript, I have made no changes.]
 
 Besides, ensemble based uncertainty doesn't account for model bias/misspecification. For instance, ensemble CI will shrink a lot when the ensemble is trained on big data even when the component models are too simplistic and biased (e.g. linear regression)-> illusion of confidence.
 
-#response[]
+#response[this is correct, but I again fail to extract an actionable comment from this sentence. Surely the reviewer is not suggesting that regression is a bad approach for SDMs? Although I do not disagree with this point, for the same reason as the above comment, I have made no changes to the manuscript.]
 
 == Precise comments
 
@@ -101,11 +101,11 @@ Besides, ensemble based uncertainty doesn't account for model bias/misspecificat
 
 40-41: yes, but bootstrap uses all the data for the training and prediction, while conformal is deprived from the calibration part of data, a problem to discuss for rare species?
 
-#response[]
+#response[TK this is only partially correct. Methods like cross-conformal prediction apply, essentially, cross-validation to the identification of the threshold. This was already cited in the manuscript. I think that it is too early to introduce this nuance here, and as the point is covered later on, I have made no changes to the manuscript at this specific place.]
 
 41: "built-in methods" what do you mean?
 
-#response[this has been changed to "methods that are specific to a particular classification algorithm".]
+#response[this has been changed to "methods that are specific to a particular classification algorithm". I thank the reviewer for pointing out the confusing formulation.]
 
 54: "is not a measure of variability coming through the distribution of data" -> I don't understand this statement, could you developp? In my understanding, conformal sets implicitely capture the probabilistic distribution of the data conditionally to predictors, which is needed to guarantee coverage. This is in line with your next sentence, so I guess it's just a misleading formulation.
 
@@ -113,11 +113,7 @@ Besides, ensemble based uncertainty doesn't account for model bias/misspecificat
 
 === Methods
 
-84: No reference for this method to generate pseudo-absences. I understand the simple logic, but it doesn't account for undervisited areas which are equally selected as very visited ones for a given distance to presence observation (among other sampling biases).
-
-#response[*TODO ADD REF*]
-
-Classical Pseudo-Absence generation methods could be used (see e.g. Wisz, M. S., & Guisan, A. (2009). Do pseudo-absence selection strategies influence species distribution models and their predictions?)
+84: No reference for this method to generate pseudo-absences. I understand the simple logic, but it doesn't account for undervisited areas which are equally selected as very visited ones for a given distance to presence observation (among other sampling biases). Classical Pseudo-Absence generation methods could be used (see e.g. Wisz, M. S., & Guisan, A. (2009). Do pseudo-absence selection strategies influence species distribution models and their predictions?)
 
 #response[*TODO THIS IS CLASSICAL*]
 
@@ -141,9 +137,15 @@ To avoid this kind of discussion, i would suggest to use a presence-absence data
 
 #response[_v._, _vs_, and _vs._ are all accepted abbreviations of the Latin _versus_.]
 
-128-129: What does "similar mean"? This statement is not factual and exhibits a lack of scientific transparency. Given that it's not central anyways, you could just remove it.
+128-129: What does "similar" mean? This statement is not factual and exhibits a lack of scientific transparency. Given that it's not central anyways, you could just remove it.
 
-#response[]
+#response[before answering the question, I need to voice my displeasure at the phrasing of this comment. To qualify a statement as "not factual" and "lacking transparency" is a rather serious accusation, and one I wish the reviewer would not be so eager to throw around.
+
+With this stated: this sentence means that, when using different classifiers to produce the model on which CP is then applied, the predicted distributions do not change overmuch. This has been clarified as "resulted in similar predicted ranges and cross-validation performance, which suggest that the problem can be handled well by multiple algorithms".
+
+This statement is, in my opinion, factual, in that it describes the fact that model selection does not have an outsized impact on the results. It is, still in my opinion, contributing to transparency in that it informs that this type of checks have been performed before discussing the results. I do not think this model comparison is important enough, and it is, regardless, certaintly not central enough, to warrant a supplementary material.
+
+Should _the editor_ disagree, I would be willing to reconsider.]
 
 131: This is misleading. Such model can't capture presence probability because it's based on opportunistic presence-only data and pseudo-absences, i would change :
 "associated to the presenceof the species" -> "associated to the observation of the species"
