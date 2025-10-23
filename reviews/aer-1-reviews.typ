@@ -169,7 +169,7 @@ and stick to this terminology for all along
 
 234-247: There appears to be several errors around the definition of the conformity score l.234/235. Where does this score comes from? Why predicted probabilities are put in the exponential?
 
-#response[]
+#response[I have added a clarification of why the softmax function is appropriate.]
 
 For a site i, the classic softmax score would simply be p_{-}^i when the ground truth (true label) is absence, or p_{+}^i when it's presence, i.e. the score for site i is: s^i = p_{+}^i 1_{Y_i=1} + p_{-}^i 1_{Y_i=0}
 

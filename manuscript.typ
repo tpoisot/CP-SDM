@@ -171,7 +171,7 @@ $
 s_+ = (exp p_+)/(exp p_+ + exp (1- p_+)), s_- = (exp (1 - p_+))/(exp p_+ + exp (1- p_+))
 $ <equation-softmax>
 
-The conformal score associated to a prediction is $1 - s_dot$, where $dot$ is the prediction ($+$ or $-$) made by the model. We call the distribution of conformal scores $cal(S)$. Note that this can be done without using the $text("softmax")$ function #add[(_i.e._ $s_+ = p_+$, $s_- = 1 - p_+$)], but it is #change[used] here as it is best practice for classification TK.
+The conformal score associated to a prediction is $1 - s_dot$, where $dot$ is the prediction ($+$ or $-$) made by the model. We call the distribution of conformal scores $cal(S)$. Note that this can be done without using the $text("softmax")$ function #add[(_i.e._ $s_+ = p_+$, $s_- = 1 - p_+$)], but it is #change[used] here as it is best practice for classification TK. #add[The use of the softmax function is appropriate here because not all algorithms for species distribution models will return true, which is to say, well-calibrated, probabilities, even though $0 <= p_+ <= 1$ and $p_- = 1 - p_+$.]
 
 The next step is to identify a critical value $accent(q, hat)$ above which a conformal score indicates that the prediction it describes is credible. This critical value is picked by examining the empirical quantile distribution of the conformal scores #add[in the distribution $cal(S)$] calculated over $n$ training examples, and an acceptable level of risk $alpha$ (explained in depth in the next sub-section). #change[Specifically, this is done by identifying the $q_i$-th quantile], where 
 
