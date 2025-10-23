@@ -202,7 +202,9 @@ In the rest of this analysis, I will set $alpha = 0.05$. As noted by #cite(<Ange
 #add[
 == Important variants on CP that are relevant for SDMs
 
-Mondrian method for CP TK ref - important to have coverage for each class because of massive class balance issues
+As mentioned previously, conformal prediction is a general framework, which has been implemented in a variety of ways. Some of these are more immediately relevant to SDMS, and in this short section I will introduce two: Mondrian-CP, and risk-aware CP.
+
+A core feature of occurrence data (whether based on documented or simulated absence data) is that they suffer from class imbalance, wherein the proportion of presences tends to be lower than the proportion of absences. As this imbalance gets extreme, having a single threshold for the inclusion of a class in the prediction set ceases to be equitable. A way to handle this issue is suggested by Mondrian-CP TK, where the scores are accumulated to class-specific distributions, here $cal(S)_+$ and $cal(S)_-$, and the number of calibration instances in these two classes are used to estimate a class-specific threshold (quantiles are, in other words, estimated for each separate distribution). Importantly, this approach has been shown to respect the coerage guarantees for each class. As the dataset used in this manuscript is showing (by construction) class imbalance, I will use Mondrian-CP throughout.
 
 Risk aware - not interested in uncertainty of presence v absence in the same way depending on biodiversity situation: compare invasion v. threatened species
 ]
