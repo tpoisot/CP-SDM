@@ -99,19 +99,17 @@ prd = predict(sdm, L; threshold=false)
 renderfigure("prediction")
 
 # this is where the experiments start
-
 mc_q = [conformal(sdm, f...; α=0.05) for f in kfold(sdm)]
 q₊, q₋ = vec(median(vcat([hcat(q...) for q in mc_q]...), dims= 1))
 
 Ŷ = predict(sdm, L; threshold=false)
 uncertain = (x -> length(credibleclasses(x, q₊, q₋))).(Ŷ)
 heatmap(predict(sdm, L), colormap=[:white, :darkgreen])
-heatmap!(uncertain, colormap=[:transparent, :grey70])
+heatmap!(uncertain, colormap=[:transparent, :grey80])
 contour!(predict(sdm, L), color=:darkgreen)
 lines!(landmass, color=:black)
-scatter!(presencelayer, color=:lime, markersize=4)
+scatter!(presencelayer, color=:purple, markersize=4)
 current_figure()
-
 # normal code resumes
 
 cs = cellarea(prd)
@@ -119,12 +117,13 @@ cs = cellarea(prd)
 cmodel = deepcopy(sdm)
 
 # Sensitivity analysis for the miscoverage rate
-rlevels = LinRange(0.015, 0.2, 50)
+rlevels = LinRange(0.012, 0.2, 50)
 miscoverage_holdout = holdout(cmodel)
 qs = [conformal(cmodel, miscoverage_holdout...; α=u) for u in rlevels]
 
-lines(rlevels, [q[1] for q in qs])
-lines!(rlevels, [q[2] for q in qs])
+lines(rlevels, [q[1] for q in qs], label="Presence", color=:darkgreen)
+lines!(rlevels, [q[2] for q in qs], label="Absence", color=:grey50, linestyle=:dash)
+axislegend()
 current_figure()
 
 surf_presence = zeros(length(qs))
@@ -136,8 +135,10 @@ surf_unsure_absence = zeros(length(qs))
 𝐏 = predict(sdm; threshold=false)
 eff = [mean(length.(credibleclasses.(𝐏, q...))) for q in qs]
 
+scatter(rlevels, eff)
+
 for i in eachindex(qs)
-    Cp, Ca = credibleclasses(prd, qs[i])
+    Cp, Ca = credibleclasses(prd, qs[i]...)
     undet = .!(Cp .| Ca)
     sure_presence = Cp .& (.!Ca)
     unsure = Ca .& Cp
@@ -151,8 +152,9 @@ for i in eachindex(qs)
 end
 
 # Cross-conformal with median range selected
-q = median([_estimate_q(cmodel, fold...; α=0.05) for fold in folds])
-Cp, Ca = credibleclasses(prd, q)
+mc_q = [conformal(sdm, f...; α=0.05) for f in kfold(sdm)]
+q₊, q₋ = vec(median(vcat([hcat(q...) for q in mc_q]...), dims= 1))
+Cp, Ca = credibleclasses(prd, q₊, q₋)
 
 # Partition
 sure_presence = Cp .& (.!Ca)
@@ -164,8 +166,9 @@ unsure_out = unsure .& (.!distrib)
 renderfigure("uncertainty")
 
 # Example with unknown areas
-q2 = median([_estimate_q(cmodel, fold...; α=0.3) for fold in folds])
-Cp2, Ca2 = credibleclasses(prd, q2)
+mc_q = [conformal(sdm, f...; α=0.2) for f in kfold(sdm)]
+q₊, q₋ = vec(median(vcat([hcat(q...) for q in mc_q]...), dims= 1))
+Cp2, Ca2 = credibleclasses(prd, q₊, q₋)
 undet = .!(Cp2 .| Ca2)
 
 renderfigure("undetrange")
@@ -189,7 +192,11 @@ renderfigure("shapley")
 fprd = predict(sdm, F; threshold=false)
 ft_distrib = predict(sdm, F; threshold=true)
 
-fCp, fCa = credibleclasses(fprd, q)
+mc_q = [conformal(sdm, f...; α=0.05) for f in kfold(sdm)]
+q = vec(median(vcat([hcat(q...) for q in mc_q]...), dims= 1))
+Cp, Ca = credibleclasses(prd, q₊, q₋)
+
+fCp, fCa = credibleclasses(fprd, q...)
 
 ft_sure_presence = fCp .& (.!fCa)
 ft_sure_absence = fCa .& (.!fCp)

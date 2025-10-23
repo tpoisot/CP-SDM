@@ -8,7 +8,7 @@ function _no_softmax(p)
     return w
 end
 
-function conformal(sdm, tr, val; α=0.05, w₊=1.0, w₋=1.0, softmax=true, kwargs...)
+function conformal(sdm, tr, val; α=0.05, softmax=true, kwargs...)
     model = deepcopy(sdm)
 
     # This is the scoring function
@@ -39,10 +39,10 @@ function conformal(sdm, tr, val; α=0.05, w₊=1.0, w₋=1.0, softmax=true, kwar
         c = 1 - (labels(model)[val][i] ? s[i][1] : s[i][2])
         if labels(model)[val][i]
             c₊ += 1
-            s₊[c₊] = w₊ * c
+            s₊[c₊] = c
         else
             c₋ += 1
-            s₋[c₋] = w₋ * c
+            s₋[c₋] = c
         end
     end
 
@@ -56,7 +56,7 @@ function conformal(sdm, tr, val; α=0.05, w₊=1.0, w₋=1.0, softmax=true, kwar
     return (q₊, q₋)
 end
 
-function credibleclasses(ŷ, q₊, q₋; w₊=1.0, w₋=1.0, softmax=true)
+function credibleclasses(ŷ, q₊, q₋; softmax=true)
 
     # Scoring function
     class_scores = softmax ? _softmax : _no_softmax
@@ -66,11 +66,27 @@ function credibleclasses(ŷ, q₊, q₋; w₊=1.0, w₋=1.0, softmax=true)
 
     # And now we collect the credible classes in a Set
     ℂ = Set()
-    if (w₊ * p₊) <= q₊
+    if p₊ <= q₊
         push!(ℂ, true)
     end
-    if (w₋ * p₋) <= q₋
+    if p₋ <= q₋
         push!(ℂ, false)
     end
     return ℂ
+end
+
+
+function credibleclasses(ŷ::SDMLayer, args...; kwargs...)
+    presence = zeros(ŷ, Bool)
+    absence = zeros(ŷ, Bool)
+    for k in keys(ŷ)
+        ℂ = credibleclasses(ŷ[k], args...; kwargs...)
+        if true in ℂ
+            presence[k] = true
+        end
+        if false in ℂ
+            absence[k] = true
+        end
+    end
+    return (presence, absence)
 end
