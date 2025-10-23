@@ -12,7 +12,7 @@
   #body
 ]
 
-#let add(body) = text(fill: rgb(0, 100, 0), weight: "bold")[#highlight(body, fill: rgb(250, 250, 240))]
+#let add(body) = text(fill: rgb(0, 100, 0), weight: "regular")[#body]
 #let change(body) = text(fill: rgb(0, 100, 100))[#underline(body, stroke: rgb(0, 90, 90))]
 #let cut(body) = text(fill: rgb(150, 150, 150))[#strike(body, stroke: rgb(100, 0, 0))]
 #show "TK": text(weight: "bold", fill: rgb("#e08619"))[TK]
@@ -35,7 +35,7 @@ Yet, I acknowledge that it's not the first paper using this method for SDM (e.g.
 
 So, even though the manuscript is useful, i'm not sure it fits as a research article with the current content, but I let the editor decide about that. There's at least a need for major revisions and added content.
 
-#response[I have addressed the responses to the reviewer and hope that the editors will see the value of this manuscript in its revised format.]
+#response[I have addressed the responses to the reviewer and hope that the editors will see the value of this manuscript in its revised format. The manuscript in its revised form presents the conformal prediction framework in a lot more depth, and provides clear recommendations for both its extension and adoption for species distribution models.]
 
 == General
 
@@ -47,15 +47,21 @@ Davis, A. J., Groom, Q., ... & Strubbe, D. (2024). Reproducible WiSDM: a workflo
 
 What do CP predicted sets mean under climatic novelty? If my understanding is correct, exchangeability, i.e. the main assumption of CP, is violated when we predict under shifted covariates compared to training conditions. It means that CP loose its desired marginal coverage guarantee for predictions under future climate scenarios, so this method shouldn't be used or interpreted in this context.
 
-#response[]
+#response[The reviewer is absolutely correct that exchangeability is a core assumption of CP. That it would be violated under climate change scenarios is possible, but not necessarily always so, and this is why in this manuscript I quantify this through the proxy of bioclimatic novelty. Furthermore, recent results suggest that in-sample calibration makes CP more robust during training, and also establish additional techniques to minimize the effect of possible loss of exchangeability during the model application. These results are now cited in the main text (the section on climate change has been re-organized), and are also given a sub-section in the discussion.]
 
 Not sure it's a relevant choice to use PO + pseudo-absence data to illustrate CP because it is misleading to then speak about probability of presence, while you could just use real presence-absence data. Obviously, it doesn't exist for the Sasquatch, which is not fun, but take comfort in the fact it can be difficult to understand what is meant by the uncertainty of predictions of observations of a fictional creature...
 
-#response[]
+#response[the reviewer is correct about the fact that absences in this dataset are pseudo-absences. I maintain that is is relevant here, for three reasons.
+
+First, presence-only data are the overwhelming majority of cases for which SDMs are applied. Biodiversity is a data-defficient field when it comes to species presence, but is orders of magnitude more data defficient for species absences. Testing a method on the scenario where it will most lilkely be applied makes the most sense.
+
+Second, the assumption that pseudo-absences are equivalent to absences is inherent to all forms of SDMs, even when for example using MaxEnt. That this assumption is most often unstated does not make it less true. It is established practice in the litterature to simplify the writing by discussing the pseudo-absences as absences.
+
+Finally, as the reviewer correctly identifies, the species is fictional. The manuscript would work exactly in the same way with, for example, virtual species, for which full knowledge of presences and absences would be available. But the data used in the manuscript are realistic-looking, and work well enough to discuss the method.]
 
 There appears to be errors in the mathematical definition of the conformity score which doesn't make sense (cf my comment below). The text must be fixed, and the associated results and Figures corrected accordingly.
 
-#response[]
+#response[as I will explain in the detailed comments, the reviewer is factually incorrect about this statement. After a careful re-reading of this section, and verification of the implementation, there is no need to modify either the text or the figures, as these were produced in the correct way initially.]
 
 A variety of score functions are used, even for binary classification, so I think an introduction to CP for SDM should assess the pros and cons of these.
 
@@ -63,23 +69,19 @@ A variety of score functions are used, even for binary classification, so I thin
 
 Various abuse of terms, including "species" (Is it?), "presence", "absence" -> This is misleading as you work with PO with many "false absences". This leads to the even more misleading term "sure absence" when it comes to CP credible sets
 
-#response[]
+#response[the reviewer seems to disagree with the choice of study system and nomenclature. I take note of this disagreement, but as I have laid out my arguments about why these are immaterial to the description of the method, I have made no further changes to the manuscript.]
 
 I demand a consistent change of terms, as for instance "presence" should rather be "observation" and "absence" should be "non observation".
 
-#response[]
+#response[this change has not been made. I have added a paragraph about the choice of study system and terminology. I am hopeful that it will help readers figure out what the model does, which is the purpose of this article. Indeed, producing a species distribution model of the Sasquatch is not a relevant scholarly exercise, not because it is uninteresting, but because it has already been done by multiple colleagues (whose contributions are cited in the main text).]
 
 It would be interesting to developp and clarify the comparison between bootstrap and CP, or even better evaluate the alignment empirically.
 
 #response[]
 
-Fig.3.C suggests that the uncertainty quantification of bootstrap aligns with the one of CP which makes sense, but i'm also not surprised that the link between IQR of ensemble predictions and CP categories is not strong because you're probably not comparing the right quantities. 
+Fig.3.C suggests that the uncertainty quantification of bootstrap aligns with the one of CP which makes sense, but i'm also not surprised that the link between IQR of ensemble predictions and CP categories is not strong because you're probably not comparing the right quantities. Indeed, uncertainty quantification with bootstrap ensemble should also account for the mean predicted value, not only for the variability/IQR.
 
-#response[]
-
-Indeed, uncertainty quantification with bootstrap ensemble should also account for the mean predicted value, not only for the variability/IQR.
-
-#response[]
+#response[the use of bootstrap variability to evaluate uncertainty, and of the original model to report the prediction, is common in SDMs. I have clarified this information in the text, alongside additional references. For this reason, I maintain that the current approach is valid, and have made no changes to the manuscript beyond this clarification.]
 
 A key difference between CP predictive sets vs any ensemble based predictive set, is that, unless the ensemble model prediction is perfectly calibrated to the real probability p(Y=1|X) (unrealistic), the latter don't provide the minimum coverage guarantee of CP, i.e. they don't inform about (absolute) predictive error. 
 
@@ -95,7 +97,7 @@ Besides, ensemble based uncertainty doesn't account for model bias/misspecificat
 
 30-32: Prediction uncertainty can also arise from uncertainty about the predictors themselves (e.g. errors in climate variables, which are important ), but those not accounted for in conformal -> point of discussion?
 
-#response[]
+#response[this is correct - this point has been added to the conclusion section.]
 
 40-41: yes, but bootstrap uses all the data for the training and prediction, while conformal is deprived from the calibration part of data, a problem to discuss for rare species?
 
@@ -103,7 +105,7 @@ Besides, ensemble based uncertainty doesn't account for model bias/misspecificat
 
 41: "built-in methods" what do you mean?
 
-#response[]
+#response[this has been changed to "methods that are specific to a particular classification algorithm".]
 
 54: "is not a measure of variability coming through the distribution of data" -> I don't understand this statement, could you developp? In my understanding, conformal sets implicitely capture the probabilistic distribution of the data conditionally to predictors, which is needed to guarantee coverage. This is in line with your next sentence, so I guess it's just a misleading formulation.
 
@@ -121,11 +123,11 @@ Classical Pseudo-Absence generation methods could be used (see e.g. Wisz, M. S.,
 
 I get that what means "presence" or "absence" is not central in this article, but if you're goal is really to ease the uptake of this kind of method, you should rather use a relevant use-case.
 
-#response[]
+#response[this point has already been adressed. As the reviewer correctly figured out, the definition of presence and absence is not central to this manuscript.]
 
 To avoid this kind of discussion, i would suggest to use a presence-absence dataset.
 
-#response[]
+#response[this point has already been adresed.]
 
 110-116: What does it mean that results hold qualitatively? Lack of transparency about this internal result, why not shown as appendice?
 
@@ -137,7 +139,7 @@ To avoid this kind of discussion, i would suggest to use a presence-absence data
 
 119: "v." -> "vs"?
 
-#response[]
+#response[_v._, _vs_, and _vs._ are all accepted abbreviations of the Latin _versus_.]
 
 128-129: What does "similar mean"? This statement is not factual and exhibits a lack of scientific transparency. Given that it's not central anyways, you could just remove it.
 
@@ -147,11 +149,11 @@ To avoid this kind of discussion, i would suggest to use a presence-absence data
 "associated to the presenceof the species" -> "associated to the observation of the species"
 and stick to this terminology for all along
 
-#response[]
+#response[this point has already been adressed.]
 
 134: Similarly "the probability that the species is absent from the location." -> "the probability that the species is not observed in the location."
 
-#response[]
+#response[this point has already been adressed.]
 
 === Conformal Prediction
 
@@ -169,15 +171,23 @@ and stick to this terminology for all along
 
 For a site i, the classic softmax score would simply be p_{-}^i when the ground truth (true label) is absence, or p_{+}^i when it's presence, i.e. the score for site i is: s^i = p_{+}^i 1_{Y_i=1} + p_{-}^i 1_{Y_i=0}
 
-#response[]
+#response[the reviewer is factually incorrect. The softmax function has a single definition:
 
-You don't mention that, in calibration, the true label determines which probability is used and that the quantile is computed over s^1,s^2...
+$
+sigma(bold(x))_i = "exp"(x_i)/(sum_j "exp"(x_j))  
+$
 
-#response[]
+For binary classification, where the sum of predictions for the positive and negative classes must be one by definition, the reviewer will be able to verify that the formulation in the main text is indeed correct. The formulation that the reviewer suggests is also, in fact, mentioned in the main text:  "[n]ote that this can be done without using the $text("softmax")$ function #add[(_i.e._ $s_+ = p_+$, $s_- = 1 - p_+$)]".
+
+]
+
+You don't mention that, in calibration, the true label determines which probability is used and that the quantile is computed over $s^1$, $s^2$, ...
+
+#response[this has been fixed in the revision.]
 
 Furthermore, You don't mention that there exist different commonly used score functions, even in this simple case of binary classification, which are alternatives to the softmax that you intend to use, e.g. the Adaptive Prediction Sets (APS) score, see: Angelopoulos, A. N., & Bates, S. (2023). Conformal prediction: A gentle introduction. Foundations and Trends® in Machine Learning, 16(4), 494-591.
 
-#response[]
+#response[more than a different score function, APS is a different way to handle the scores of all classes (but in the reference that the reviewer cites, softmax is still used to generate these scores). I have added a clarification about APS, as well as additional clarifications and mentions of CP techniques. Note that the manuscript already discussed full, split, inductive, and cross-conformal approaches.]
 
 263-266: But if the empty set is predicted quite often, it's possible to have an inefficiency of 1 and yet to have predictions with both outcomes, right?
 
@@ -233,7 +243,7 @@ l. 133 p_{i}+ Does the author mean p_{i+}?
 
 l. 197 Here or slightly later, I would recommend to mention that Angelopoulos & Bates call credible sets «prediction sets» (if I got that correctly) and that coverage is a well-defined, classical property of confidence intervals in statistics, to help the reader connect with the existing literature. As I understand it coverage means exactly the same thing here as in classical statistics.
 
-#response[]
+#response[I have replaced "credible sets" by "prediction sets" throughout, which is indeed the terminology used in Angelopoulos and Bates. I have also added the clarification about coverage, and thank the reviewer for pointing it out.]
 
 l. 232 isn’t this robustness only true for split CP? Or is it more general?
 
@@ -241,7 +251,7 @@ l. 232 isn’t this robustness only true for split CP? Or is it more general?
 
 l. 243 Why uppercase S? (as opposed to lowercase)
 
-#response[]
+#response[I used $cal(S)$ to note the distribution of the scores, from which the critical value for the inclusion of a class is derived. This has now been clarified in the text, and this notation is now re-used in a few additional places when intoducing variants of conformal prediction.]
 
 Figure 3C I wasn’t sure if it was defined for alpha=0.05 or a variable alpha level
 
