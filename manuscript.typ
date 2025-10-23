@@ -65,7 +65,7 @@
 #pagebreak()
 
 // Editing marks
-#let add(body) = text(fill: rgb(0, 100, 0))[#highlight(body, fill: rgb(250, 250, 240))]
+#let add(body) = text(fill: rgb(0, 100, 0))[#body]
 #let change(body) = text(fill: rgb(0, 100, 100))[#underline(body, stroke: rgb(0, 90, 90))]
 #let cut(body) = text(fill: rgb(150, 150, 150))[#strike(body, stroke: rgb(100, 0, 0))]
 #show "TK": text(weight: "bold", fill: rgb("#e08619"))[TK]
