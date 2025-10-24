@@ -1,7 +1,7 @@
 #set text(font: "Libertinus Sans")
 #show math.equation: set text(font: "Libertinus Math")
 
-#let response(ed: false, body) = block(fill: color.hsl(195deg, 100%, 98%), inset: 1em, radius: 0.15em, width: 100%, stroke: 0.1mm + color.hsv(195deg, 100%, 45%))[
+#let response(ed: false, body) = block(fill: color.hsl(195deg, 30%, 98%), inset: 1em, radius: 0.05em, width: 100%, stroke: (left: 0.2mm + color.hsv(195deg, 100%, 45%)))[
   #if ed == true {
     text(weight: "bold")[Comments for the editor]
     linebreak()
@@ -9,7 +9,7 @@
   } else {
     text(weight: "bold")[Response:]
   }
-  #body
+  #text(font: "Libertinus Serif")[#body]
 ]
 
 #let add(body) = text(fill: rgb(0, 100, 0), weight: "regular")[#body]
