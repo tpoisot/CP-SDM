@@ -116,14 +116,14 @@ axislegend()
 current_figure()
 
 # Risk level at which an area becomes uncertain
-isuncertain(p, q1, q2) = length(credibleclasses(p, q1, q2)) == 2
+iscertain(p, q1, q2) = length(credibleclasses(p, q1, q2)) == 1
 uncmap = [(y -> isuncertain(y, q...)).(predict(sdm, L; threshold=false)) for q in qs]
 function uncindex(v, rl)
     u = findlast(v)
     return isnothing(u) ? NaN : rl[u]
 end
 uncmosaic = mosaic(v -> uncindex(v, rlevels), uncmap)
-fg, ax, hm = heatmap(uncmosaic, colormap=:navia)
+fg, ax, hm = heatmap(uncmosaic, colormap=:Reds)
 lines!(ax, landmass, color=:black)
 Colorbar(fg[1,2], hm)
 current_figure()

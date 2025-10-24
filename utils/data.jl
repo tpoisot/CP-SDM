@@ -21,16 +21,26 @@ extent = SDT.boundingbox(landmass)
 
 # Get the layers
 provider = RasterData(WorldClim2, BioClim)
-prj = Projection(SSP370, MRI_ESM2_0)
-L = SDMLayer{Float32}[SDMLayer(provider; resolution=2.5, layer=l, extent...) for l in layers(provider)]
-F = SDMLayer{Float32}[SDMLayer(provider, prj; resolution=2.5, timespan=Dates.Year(2081) => Dates.Year(2100), layer=l, extent...) for l in layers(provider)]
+GCMs = [MRI_ESM2_0, ACCESS_CM2, EC_Earth3_Veg, CanESM5, GFDL_ESM4, MIROC6]
 
+L = SDMLayer{Float32}[SDMLayer(provider; resolution=2.5, layer=l, extent...) for l in layers(provider)]
 # Mask the layers
 mask!(L, landmass)
 
-# Mask the future layers
-for i in eachindex(F)
-    F[i].indices .&= L[1].indices
-    F[i].x = L[1].x
-    F[i].y = L[1].y
+# Future layers
+F = Dict()
+
+for gcm in GCMs
+    prj = Projection(SSP370, gcm)
+    tf = SDMLayer{Float32}[SDMLayer(provider, prj; resolution=2.5, timespan=Dates.Year(2081) => Dates.Year(2100), layer=l, extent...) for l in layers(provider)]
+
+    # Mask the future layers
+    for i in eachindex(tf)
+        tf[i].indices .&= L[1].indices
+        tf[i].x = L[1].x
+        tf[i].y = L[1].y
+    end
+
+    F[gcm] = tf
 end
+
