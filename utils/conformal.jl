@@ -47,8 +47,8 @@ function conformal(sdm, tr, val; α=0.05, softmax=true, kwargs...)
     end
 
     # We then get the quantiles for each of the classes
-    qᵢ₊ = ceil((c₊ + 1) * (1 - α)) / c₊
-    qᵢ₋ = ceil((c₋ + 1) * (1 - α)) / c₋
+    qᵢ₊ = clamp(ceil((c₊ + 1) * (1 - α)) / c₊, 0.0, 1.0)
+    qᵢ₋ = clamp(ceil((c₋ + 1) * (1 - α)) / c₋, 0.0, 1.0)
     q₊ = quantile(s₊, qᵢ₊)
     q₋ = quantile(s₋, qᵢ₋)
 

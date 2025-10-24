@@ -19,9 +19,9 @@ for p in polygons
 end
 contour!(ax, distrib, color=:red, levels=1)
 ax2 = Axis(f[1, 2], xlabel="Risk level α", ylabel="Range (km²)", yscale=log10)
-scatter!(ax2, rlevels, clamp.(surf_presence .+ surf_unsure, 1, Inf), color=:grey70, label="Total range")
-hlines!(ax2, [sum(mask(cs, nodata(distrib, false)))], color=:black, linestyle=:dash, label="SDM range")
-scatter!(ax2, rlevels, clamp.(surf_presence, 1, Inf), color=:forestgreen, marker=:rect, label="Sure range")
+lines!(ax2, rlevels, clamp.(surf_presence .+ surf_unsure, 1, Inf), color=:grey70, label="Total range")
+lines!(ax2, rlevels, clamp.(surf_presence, 1, Inf), color=:forestgreen, linestyle=:dash, label="Sure range")
+hlines!(ax2, [sum(mask(cs, nodata(distrib, false)))], color=:black, linestyle=:dot, label="SDM range")
 axislegend(ax2, position=:rb)
 ax3 = Axis(f[2, 2], xlabel="Inter-quantile range (ensemble)")
 hist!(ax3, mask(bsvaria, nodata(sure_absence, false)); color=(:orange, 0.7), label="Sure absence", hiparams...)

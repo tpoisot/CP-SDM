@@ -115,7 +115,11 @@ Besides, ensemble based uncertainty doesn't account for model bias/misspecificat
 
 84: No reference for this method to generate pseudo-absences. I understand the simple logic, but it doesn't account for undervisited areas which are equally selected as very visited ones for a given distance to presence observation (among other sampling biases). Classical Pseudo-Absence generation methods could be used (see e.g. Wisz, M. S., & Guisan, A. (2009). Do pseudo-absence selection strategies influence species distribution models and their predictions?)
 
-#response[*TODO THIS IS CLASSICAL*]
+#response[*TODO THIS IS CLASSICAL*
+
+The specific recommendations of Wisz & Guisan do not apply in a machine learning context, where a class imbalance of $10^4$ negative samples for $130$ positive samples (what they use in their article) would result in the type of severe imbalance which requires remediation through for example under-sampling, which would complexify the pseudo-absence generation with zero benefit for the actual point of the manuscript. This being said, because the revised version discusses class imbalance in the context of CP in more depth, the class imbalance of the dataset has been increased slightly (from 1:3 to 1:5).
+
+The reviewer is similarly correct about the selection bias, but this is _well_ beyond the scope of this manuscript, so the pseudo-absence generation has been kept as is.]
 
 I get that what means "presence" or "absence" is not central in this article, but if you're goal is really to ease the uptake of this kind of method, you should rather use a relevant use-case.
 
@@ -139,13 +143,7 @@ To avoid this kind of discussion, i would suggest to use a presence-absence data
 
 128-129: What does "similar" mean? This statement is not factual and exhibits a lack of scientific transparency. Given that it's not central anyways, you could just remove it.
 
-#response[before answering the question, I need to voice my displeasure at the phrasing of this comment. To qualify a statement as "not factual" and "lacking transparency" is a rather serious accusation, and one I wish the reviewer would not be so eager to throw around.
-
-With this stated: this sentence means that, when using different classifiers to produce the model on which CP is then applied, the predicted distributions do not change overmuch. This has been clarified as "resulted in similar predicted ranges and cross-validation performance, which suggest that the problem can be handled well by multiple algorithms".
-
-This statement is, in my opinion, factual, in that it describes the fact that model selection does not have an outsized impact on the results. It is, still in my opinion, contributing to transparency in that it informs that this type of checks have been performed before discussing the results. I do not think this model comparison is important enough, and it is, regardless, certaintly not central enough, to warrant a supplementary material.
-
-Should _the editor_ disagree, I would be willing to reconsider.]
+#response[this sentence means that, when using different classifiers to produce the model on which CP is then applied, the predicted distributions do not change overmuch. This has been clarified as "resulted in similar predicted ranges and cross-validation performance, which suggest that the problem can be handled well by multiple algorithms".]
 
 131: This is misleading. Such model can't capture presence probability because it's based on opportunistic presence-only data and pseudo-absences, i would change :
 "associated to the presenceof the species" -> "associated to the observation of the species"

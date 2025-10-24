@@ -8,24 +8,6 @@ import PrettyTables
 import Random
 Random.seed!(42069)
 
-# Load the functions we need here
-include("utils/theme.jl")
-include("utils/conformal.jl")
-include("utils/novelty.jl")
-include("utils/data.jl")
-
-# TODO figure of the q+ and q- when changing the coverage threshold to demo Mondrian
-
-# cp = [credible(y, (q₊, q₋)) for y in predict(model; threshold=false)]
-# 
-# uncertain = (x -> length(credible(x, (q₊, q₋)))).(U)
-# heatmap(predict(model, L), colormap=[:white, :darkgreen])
-# heatmap!(uncertain, colormap=[:transparent, :grey70])
-# contour!(predict(model, L), color=:darkgreen)
-# lines!(landmass, color=:black)
-# scatter!(presencelayer, color=:lime, markersize=4)
-# current_figure()
-
 # Paths to store outputs
 fpath = joinpath(@__DIR__, "figures")
 apath = joinpath(@__DIR__, "artifacts")
@@ -36,10 +18,17 @@ if ~ispath(apath)
     mkpath(apath)
 end
 
+# Load the functions we need here
+include("utils/theme.jl")
+include("utils/conformal.jl")
+include("utils/novelty.jl")
+include("utils/data.jl")
+
 # Generate pseudo-absences
 presencelayer = mask(first(L), records)
-background = pseudoabsencemask(DistanceToEvent, presencelayer)
-bgpoints = backgroundpoints(nodata(background, d -> !(20 <= d <= 300)), 3sum(presencelayer))
+distance = pseudoabsencemask(DistanceToEvent, presencelayer)
+background = nodata(distance, d -> !(20 <= d <= 300))
+bgpoints = backgroundpoints(background, 3sum(presencelayer))
 
 # Map of occurrences
 f = Figure()
@@ -117,13 +106,26 @@ cs = cellarea(prd)
 cmodel = deepcopy(sdm)
 
 # Sensitivity analysis for the miscoverage rate
-rlevels = LinRange(0.012, 0.2, 50)
+rlevels = LinRange(0.01, 0.2, 50)
 miscoverage_holdout = holdout(cmodel)
 qs = [conformal(cmodel, miscoverage_holdout...; α=u) for u in rlevels]
 
 lines(rlevels, [q[1] for q in qs], label="Presence", color=:darkgreen)
 lines!(rlevels, [q[2] for q in qs], label="Absence", color=:grey50, linestyle=:dash)
 axislegend()
+current_figure()
+
+# Risk level at which an area becomes uncertain
+isuncertain(p, q1, q2) = length(credibleclasses(p, q1, q2)) == 2
+uncmap = [(y -> isuncertain(y, q...)).(predict(sdm, L; threshold=false)) for q in qs]
+function uncindex(v, rl)
+    u = findlast(v)
+    return isnothing(u) ? NaN : rl[u]
+end
+uncmosaic = mosaic(v -> uncindex(v, rlevels), uncmap)
+fg, ax, hm = heatmap(uncmosaic, colormap=:navia)
+lines!(ax, landmass, color=:black)
+Colorbar(fg[1,2], hm)
 current_figure()
 
 surf_presence = zeros(length(qs))
@@ -166,7 +168,7 @@ unsure_out = unsure .& (.!distrib)
 renderfigure("uncertainty")
 
 # Example with unknown areas
-mc_q = [conformal(sdm, f...; α=0.2) for f in kfold(sdm)]
+mc_q = [conformal(sdm, f...; α=0.15) for f in kfold(sdm)]
 q₊, q₋ = vec(median(vcat([hcat(q...) for q in mc_q]...), dims= 1))
 Cp2, Ca2 = credibleclasses(prd, q₊, q₋)
 undet = .!(Cp2 .| Ca2)
