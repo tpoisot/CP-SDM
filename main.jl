@@ -117,6 +117,7 @@ current_figure()
 
 # Risk level at which an area becomes uncertain
 iscertain(p, q1, q2) = length(credibleclasses(p, q1, q2)) == 1
+isuncertain(p, q1, q2) = !iscertain(p, q1, q2)
 uncmap = [(y -> isuncertain(y, q...)).(predict(sdm, L; threshold=false)) for q in qs]
 function uncindex(v, rl)
     u = findlast(v)
@@ -191,23 +192,36 @@ smimp = last(findmax(svimp))
 renderfigure("shapley")
 
 # Clim change
-fprd = predict(sdm, F; threshold=false)
-ft_distrib = predict(sdm, F; threshold=true)
+projected_predictions = [predict(sdm, v; threshold=false) for (k, v) in F]
+projected_ranges = [predict(sdm, v; threshold=true) for (k, v) in F]
+projected_prediction = mosaic(median, projected_predictions)
 
+heatmap(projected_prediction)
+contour!(projected_range)
+current_figure()
+
+projected_range = mosaic(majority, projected_ranges)
+
+# Conformal CP
 mc_q = [conformal(sdm, f...; α=0.05) for f in kfold(sdm)]
 q = vec(median(vcat([hcat(q...) for q in mc_q]...), dims= 1))
 Cp, Ca = credibleclasses(prd, q₊, q₋)
 
-fCp, fCa = credibleclasses(fprd, q...)
+fCp, fCa = credibleclasses(projected_prediction, q...)
 
 ft_sure_presence = fCp .& (.!fCa)
 ft_sure_absence = fCa .& (.!fCp)
 ft_unsure = fCa .& fCp
-ft_unsure_in = ft_unsure .& ft_distrib
-ft_unsure_out = ft_unsure .& (.!ft_distrib)
+ft_unsure_in = ft_unsure .& projected_range
+ft_unsure_out = ft_unsure .& (.!projected_range)
 
 renderfigure("gainloss")
 
-nv = novelty(L, F, variables(sdm))
+# Old novelty code
+
+Fmed = [mosaic(median, [F[m][i] for m in keys(F)]) for i in eachindex(L)]
+
+novel_climates = novelty(L, Fmed, variables(sdm))
+lost_climates = novelty(Fmed, L, variables(sdm))
 
 renderfigure("novelty")

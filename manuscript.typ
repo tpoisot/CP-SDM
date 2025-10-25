@@ -121,9 +121,9 @@ The number of pseudo-absences was arbitrarily set to two times the number of pre
 
 === Bioclimatic data
 
-The model was trained, validated, and applied on the 19 WorldClim2 BIOCLIM variables #cite(<Fick2017>), at a spatial resolution of 2.5 minutes of arc. Preliminary analyses using 0.5, 2.5, 5, and 10 minutes of arc show that the qualitative results presented hold. For the projection of the model under climate change, I only report the future data under the SSP370 scenario ("business as usual"), for the MRI ESM2-0 GCM, over the period 2081-2100.
+The model was trained, validated, and applied on the 19 WorldClim2 BIOCLIM variables #cite(<Fick2017>), at a spatial resolution of 2.5 minutes of arc. Preliminary analyses using 0.5, 2.5, 5, and 10 minutes of arc show that the qualitative results presented hold. For the projection of the model under climate change, I only report the future data under the SSP370 scenario ("business as usual"), for #change[six GCMS: MRI_ESM2_0, ACCESS_CM2, EC_Earth3_Veg, CanESM5, GFDL_ESM4, and MIROC6.  The climatic data were retrieved for the 2081-2100 period]. #add[The prediction for a score under future climates is measured as the median of the predicted values for each of the GCMs, and the prediction of whether this point in within the future range of the species is done by applying majority voting to the six predictions.]
 
-The climatic novelty of the baseline _v._ future data is estimated through the Euclidean distance #cite(<Fitzpatrick2018>), specifically by assigning as a novelty score for each pixel in the future the distance to its closest baseline analogue. This novelty is measured on de-meaned predictors with unit variance.
+The climatic novelty of the baseline _v._ future data is estimated through the Euclidean distance #cite(<Fitzpatrick2018>), specifically by assigning as a novelty score for each pixel in the future the distance to its closest baseline analogue. This novelty is measured on de-meaned predictors with unit variance #add[to ensure that predictors with different scales can be adequately compared. Following TK Williams et al 2007 PNAS, novelty is calculated twice: once by using historical climate at the baseline, to measure the emergence of novel climates, and once by using historical climate as the target, to measure the loss of existing climates.]
 
 == Species distribution model
 
@@ -256,7 +256,7 @@ In #ref(<uncertainty>), we show that this prediction indeed stands: the range as
 
 == Relationship between variability and uncertainty
 
-Note that the relationship between the certainty associated to CP, and the variability under the ensemble model presented in #ref(<predictions>)B is nuanced: in #ref(<uncertainty>, supplement: "fig.")C, it appears that although areas identified as unsure using CP tend to have higher variability, there is considerable overlap between the categories. Intriguingly, the overlap between areas that are uncertain according to the conformal classifier, and areas that are uncertain according to the bootstrap model, is imperfect. There are a number of points classified as sure presences for which the IQR is very high, *i.e.* points whose certainty is not affected by undersampling the training data. Notably, the results in #ref(<uncertainty>, supplement: "fig.")C show that it is not possible to find a cutoff in the measure of bootstrap variability that would identify areas of model uncertainty. This suggests that the classification of predictions as certain/uncertain according to the conformal prediction is in part reflecting genuine uncertainty in the underlying data, but also contributing novel information about the fact that some instances are more difficult to call.
+Note that the relationship between the certainty associated to CP, and the variability under the ensemble model presented in #ref(<predictions>)B is nuanced: in #ref(<uncertainty>, supplement: "fig.")C, it appears that although areas identified as unsure using CP tend to have higher variability, there is considerable overlap between the categories. Intriguingly, the overlap between areas that are uncertain according to the conformal classifier, and areas that are uncertain according to the bootstrap model, is imperfect. There are a number of points classified as sure presences for which the IQR is very high, _i.e._ points whose certainty is not affected by undersampling the training data. Notably, the results in #ref(<uncertainty>, supplement: "fig.")C show that it is not possible to find a cutoff in the measure of bootstrap variability that would identify areas of model uncertainty. This suggests that the classification of predictions as certain/uncertain according to the conformal prediction is in part reflecting genuine uncertainty in the underlying data, but also contributing novel information about the fact that some instances are more difficult to call.
 
 These results can be better understood by contrasting what "uncertain" means in the context of CP, and how it differs from the uncertainty in the ensemble model. The uncertainty derived from the ensemble model represents whether many models trained on small perturbations of the full training dataset would agree on a specific prediction task, represented by an array of environmental predictors. Therefore, the uncertainty from the ensemble originates in the estimation of the parameters, and its sensitivity to being able to access the full information within the training data. Uncertainty in the conformal classifier is coming from comparing the prediction to all other predictions under an estimation of the distributions for the conditions leading to the prediction of the presence (or absence) outcome. Therefore, the uncertainty from the conformal predictors accounts for all the predictions the model can make, and accounts for the variability _across_ predictions within a fully known dataset.
 
@@ -307,7 +307,6 @@ Based on the comparison between the baseline (#ref(<predictions>, supplement: "f
 By applying these rules on the predicted changes in presence/absence status, we can identify large areas that are confidently loss towards the Southern edge of the species's range, with very limited areas of either possible or sure gain, strongly suggesting that this species would undergo range contraction. Note that the area corresponding to ambiguous transitions is relatively large, which provides a good understanding of the possible variation to be expected under this climate change scenario.
 
 #add[
-
 === Uncertainty and bioclimatic novelty
 
 exchangeability is a core assumption - climate change likely to be a departure
@@ -337,13 +336,15 @@ This task is particularly crucial given that entirely novel climatic conditions 
 Conformal prediction, like most SDM methods, is not quite delivering a true estimate of the probability of presence #cite(<Phillips2013>). Nevertheless, it brings valuable information, in the form of a quantified measure of whether a prediction comes with uncertainty (are both presence and absence in the #change[prediction set]?) in a way that is directly comparable with the non-conformal prediction. "Class overlap", where both presences and absences are observed under the same values of the predictions, decreases the predictive performance of models #cite(<Valavi2021>) --- CP is naturally suited at handling this, by assigning the area where overlap occurs to uncertain predictions.
 
 #add[
-== Making CP more relevant to species distribution modeling
+== Increasing the relevance of CP to species distribution modeling
 
 Previous use of CP but for a confidence interval -- suggests we need to figure out if we want to treat SDM as regression or classification problems, or at least usefulness of either approaches
 
 ACI also emerging as different methodology achieving similar goals with similar statistical guarantees
 
-climate change and exchangeability - need to look more in depth, but also admit that this is common to all SDMs -- here handled by looking at novelty v. type of uncertainty
+Although the change in climatic conditions has been measured through climate velocity, TK TREE paper, measures of climate _novelty_ are likely to be more informative for the interpretation of CP. Exchangeability of the data is a core assumption of CP, and although some recent evidence suggests that CP is relatively robust to violations of this assumption, a very high novelty is likely to result in locally non-exchangeable data: the model would be applied (and its uncertainty quantified) on data points that are outside of the (joint) distribution of variables in the training set. Quantifying climate novelty is one approach to estimating covariate shift, TK
+
+Recent contributions to the analysis of ecological novelty suggest that some methods can be used with cutoff --, also TK 2025 novelty paper on cutoffs -- TK finish this thought
 ]
 
 #add[
@@ -352,7 +353,7 @@ climate change and exchangeability - need to look more in depth, but also admit 
 
 Transparent communication of uncertainty, meaning that it is both spatially explicit, quantified, and expressed under a risk set by the user, is important: we do not expect a fully trained model to always be certain, as some areas are genuinely more difficult to predict. For example, small organisms are more inherently stochastic #cite(<Soininen2013>); any form of stochastic event will drive species distribution even when there is strong environmental signal #cite(<Mohd2016>); these stochastic events can even manifest in areas that are close to the species' environmental optimum #cite(<Dallas2020>). For these reasons, CP can produce interpretable estimates of uncertainty in species distribution models, and does not require the adoption of additional modeling tools or paradigms as it functions on an already trained model.
 
-#add[TK uncertainty in variables]
+#add[TK uncertainty in variables - more than aleatoric v. epistemic uncertainty]
 
 CP contributes to dispel what #cite(<Messeri2024>, form: "prose") called the "illusion of understanding", which is often associated with ML models: it generates an understanding of the uncertainty from observations of a pre-trained model, and expresses this uncertainty both in absolute (is the "presence" event in the #change[prediction set]?) and relative (is the point estimate of the score for presence larger than for absence?) terms. Because this technique is computationally efficient and works on pre-trained models, it opens up the opportunity for more systematic uncertainty quantification #cite(<Zurell2020>) in SDMs. CP, in short, can deliver the "maps of ignorance" that #cite(<Rocchini2011>, form: "prose") argued for: how difficult is it to make a prediction for the range at a given risk level is, in and of itself, an important information to frame the reliability of the results. Finally, CP can provide guidance on the feedback loop between SDM training and field validation #cite(<Johnson2023>) --- areas where the range is certain are a much lower priority for sampling.
 
