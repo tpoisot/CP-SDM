@@ -8,7 +8,7 @@ tr_sureloss = nodata((sure_presence .| unsure) .& ft_sure_absence, false)
 # Novelty map + histograms
 f = Figure(; size=(1200, 600))
 ax = Axis(f[1:3, 1:2]; aspect=DataAspect())
-hm = heatmap!(ax, bioclimatic_novelty, colormap=:linear_wcmr_100_45_c42_n256, colorscale=sqrt)
+hm = heatmap!(ax, lost_climates, colormap=:Oranges, colorscale=sqrt)
 for p in polygons
     lines!(ax, p, color=:grey10, linewidth=1)
 end
@@ -27,20 +27,43 @@ Colorbar(
 )
 hidespines!(ax)
 hidedecorations!(ax)
-ax_cr = Axis(f[1, 3]; ylabel="Conserved", xscale=sqrt)
-ax_am = Axis(f[1, 4]; ylabel="Ambiguous", xscale=sqrt)
-ax_mg = Axis(f[2, 3]; ylabel="Possible gain", xscale=sqrt)
-ax_ml = Axis(f[2, 4]; ylabel="Possible loss", xscale=sqrt)
-ax_sg = Axis(f[3, 3]; ylabel="Sure gain", xscale=sqrt)
-ax_sl = Axis(f[3, 4]; ylabel="Sure loss", xscale=sqrt)
-hist!(ax_cr, mask(bioclimatic_novelty, tr_conserved), bins=LinRange(0.1, 1.5, 80), color=(:black, 1.0))
-hist!(ax_am, mask(bioclimatic_novelty, tr_ambig), bins=LinRange(0.1, 1.5, 80), color=(:grey60, 1.0))
-hist!(ax_mg, mask(bioclimatic_novelty, tr_maybegain), bins=LinRange(0.1, 1.5, 10), color=(cmap[5], 1.0))
-hist!(ax_sg, mask(bioclimatic_novelty, tr_suregain), bins=LinRange(0.1, 1.5, 80), color=(cmap[4], 1.0))
-hist!(ax_ml, mask(bioclimatic_novelty, tr_maybeloss), bins=LinRange(0.1, 1.5, 80), color=(cmap[1], 1.0))
-hist!(ax_sl, mask(bioclimatic_novelty, tr_sureloss), bins=LinRange(0.1, 1.5, 80), color=(cmap[2], 1.0))
-for ax in [ax_cr, ax_am, ax_mg, ax_ml, ax_sg, ax_sl]
-    xlims!(ax, (0.1, 1.5))
+ax_np = Axis(f[1, 3]; ylabel="Future presence")
+ax_nu = Axis(f[2, 3]; ylabel="Future uncertain")
+ax_na = Axis(f[3, 3]; ylabel="Future absence", xlabel="Novel climate index")
+ax_lp = Axis(f[1, 4]; ylabel="Future presence")
+ax_lu = Axis(f[2, 4]; ylabel="Future uncertain")
+ax_la = Axis(f[3, 4]; ylabel="Future absence", xlabel="Lost climate index")
+
+coolbins = LinRange(0.1, 1.2, 80)
+
+# Novel climate
+hist!(ax_np, mask(novel_climates, nodata(ft_sure_presence, false)), bins=coolbins, color=:darkgreen, strokecolor=:black, strokewidth=0.5)
+hist!(ax_np, mask(novel_climates, nodata(ft_sure_presence .& (unsure .| sure_absence), false)), bins=coolbins, color=:grey50, strokecolor=:black, strokewidth=0.5)
+hist!(ax_np, mask(novel_climates, nodata(ft_sure_presence .& sure_absence, false)), bins=coolbins, color=:white, strokecolor=:black, strokewidth=0.5)
+
+hist!(ax_nu, mask(novel_climates, nodata(ft_unsure, false)), bins=coolbins, color=:darkgreen, strokecolor=:black, strokewidth=0.5)
+hist!(ax_nu, mask(novel_climates, nodata(ft_unsure .& (unsure .| sure_absence), false)), bins=coolbins, color=:grey50, strokecolor=:black, strokewidth=0.5)
+hist!(ax_nu, mask(novel_climates, nodata(ft_unsure .& sure_absence, false)), bins=coolbins, color=:white, strokecolor=:black, strokewidth=0.5)
+
+hist!(ax_na, mask(novel_climates, nodata(ft_sure_absence, false)), bins=coolbins, color=:darkgreen, strokecolor=:black, strokewidth=0.5)
+hist!(ax_na, mask(novel_climates, nodata(ft_sure_absence .& (unsure .| sure_absence), false)), bins=coolbins, color=:grey50, strokecolor=:black, strokewidth=0.5)
+hist!(ax_na, mask(novel_climates, nodata(ft_sure_absence .& sure_absence, false)), bins=coolbins, color=:white, strokecolor=:black, strokewidth=0.5)
+
+# Lost climates
+hist!(ax_lp, mask(lost_climates, nodata(ft_sure_presence, false)), bins=coolbins, color=:darkgreen, strokecolor=:black, strokewidth=0.5)
+hist!(ax_lp, mask(lost_climates, nodata(ft_sure_presence .& (unsure .| sure_absence), false)), bins=coolbins, color=:grey50, strokecolor=:black, strokewidth=0.5)
+hist!(ax_lp, mask(lost_climates, nodata(ft_sure_presence .& sure_absence, false)), bins=coolbins, color=:white, strokecolor=:black, strokewidth=0.5)
+
+hist!(ax_lu, mask(lost_climates, nodata(ft_unsure, false)), bins=coolbins, color=:darkgreen, strokecolor=:black, strokewidth=0.5)
+hist!(ax_lu, mask(lost_climates, nodata(ft_unsure .& (unsure .| sure_absence), false)), bins=coolbins, color=:grey50, strokecolor=:black, strokewidth=0.5)
+hist!(ax_lu, mask(lost_climates, nodata(ft_unsure .& sure_absence, false)), bins=coolbins, color=:white, strokecolor=:black, strokewidth=0.5)
+
+hist!(ax_la, mask(lost_climates, nodata(ft_sure_absence, false)), bins=coolbins, color=:darkgreen, strokecolor=:black, strokewidth=0.5)
+hist!(ax_la, mask(lost_climates, nodata(ft_sure_absence .& (unsure .| sure_absence), false)), bins=coolbins, color=:grey50, strokecolor=:black, strokewidth=0.5)
+hist!(ax_la, mask(lost_climates, nodata(ft_sure_absence .& sure_absence, false)), bins=coolbins, color=:white, strokecolor=:black, strokewidth=0.5)
+
+for ax in [ax_np, ax_nu, ax_na, ax_lp, ax_lu, ax_la]
+    xlims!(ax, extrema(coolbins))
     hideydecorations!(ax, label=false)
     tightlimits!(ax)
 end
