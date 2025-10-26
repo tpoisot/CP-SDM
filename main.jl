@@ -93,22 +93,13 @@ end
 
 q₊, q₋ = q(sdm)
 
-Ŷ = predict(sdm, L; threshold=false)
-uncertain = (x -> length(credibleclasses(x, q₊, q₋))).(Ŷ)
-heatmap(predict(sdm, L), colormap=[:white, :darkgreen])
-heatmap!(uncertain, colormap=[:transparent, :grey80])
-contour!(predict(sdm, L), color=:darkgreen)
-lines!(landmass, color=:black)
-scatter!(records, color=:purple, markersize=4)
-current_figure()
-# normal code resumes
-
+# Cell surface
 cell_surface = cellarea(current_range)
 
 cmodel = deepcopy(sdm)
 
 # Sensitivity analysis for the miscoverage rate
-risk_levels = repeat(LinRange(0.7, 0.99, 15); inner=10)
+risk_levels = repeat(LinRange(0.7, 0.99, 25); inner=15)
 qs = [conformal(cmodel, holdout(cmodel)...; α=1.0-risk) for risk in risk_levels]
 
 function _agr(rl, qs)
@@ -123,27 +114,7 @@ function _agr(rl, qs)
     return x, ym, ys
 end
 
-x, m, s = _agr(risk_levels, first.(qs))
-errorbars(x, m, s, whiskerwidth=10, color=:darkgreen, depth_shift=-1.0)
-scatter!(x, m, strokecolor=:darkgreen, strokewidth=3, color=:white, label="Presence.")
-x, m, s = _agr(risk_levels, last.(qs))
-errorbars!(x, m, s, whiskerwidth=10, color=:grey50, depth_shift=-1.0)
-scatter!(x, m, strokecolor=:grey50, strokewidth=3, color=:white, label="Absence.")
-axislegend(position=:rb)
-current_figure()
-
-# Risk level at which an area becomes certain
-iscertain(p, q1, q2) = length(credibleclasses(p, q1, q2)) == 1
-uncmap = [(y -> iscertain(y, q...)).(predict(sdm, L; threshold=false)) for q in qs]
-function uncindex(v, rl)
-    u = findall(v)
-    return isempty(u) ? NaN : maximum(rl[u])
-end
-uncmosaic = mosaic(v -> uncindex(v, risk_levels), uncmap)
-fg, ax, hm = heatmap(uncmosaic, colormap=:davos)
-lines!(ax, landmass, color=:black)
-Colorbar(fg[1,2], hm)
-current_figure()
+renderfigure("mondrian")
 
 # Now we do the uncertainty figure
 
