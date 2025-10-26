@@ -6,6 +6,8 @@ import Downloads
 import Dates
 import PrettyTables
 import Random
+using ColorBlendModes
+using ColorSchemes
 Random.seed!(42069)
 
 # Paths to store outputs
@@ -217,11 +219,12 @@ ft_unsure_out = ft_unsure .& (.!projected_range)
 
 renderfigure("gainloss")
 
-# Old novelty code
+# Code for novelty - we take the median value for each pixel here purely to save
+# time, otherwise this is a very long step for very minor differences in the end
 
 Fmed = [mosaic(median, [F[m][i] for m in keys(F)]) for i in eachindex(L)]
 
-novel_climates = novelty(L, Fmed, variables(sdm))
-lost_climates = novelty(Fmed, L, variables(sdm))
+novel_climates = novelty(L, Fmed, variables(sdm)) # Emergence of novel climates
+lost_climates = novelty(Fmed, L, variables(sdm)) # Loss of historical climates
 
 renderfigure("novelty")

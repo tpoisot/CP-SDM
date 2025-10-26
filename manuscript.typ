@@ -335,6 +335,8 @@ This task is particularly crucial given that entirely novel climatic conditions 
 
 Conformal prediction, like most SDM methods, is not quite delivering a true estimate of the probability of presence #cite(<Phillips2013>). Nevertheless, it brings valuable information, in the form of a quantified measure of whether a prediction comes with uncertainty (are both presence and absence in the #change[prediction set]?) in a way that is directly comparable with the non-conformal prediction. "Class overlap", where both presences and absences are observed under the same values of the predictions, decreases the predictive performance of models #cite(<Valavi2021>) --- CP is naturally suited at handling this, by assigning the area where overlap occurs to uncertain predictions.
 
+#add[TK uncertainty in variables - more than aleatoric v. epistemic uncertainty]
+
 #add[
 == Increasing the relevance of CP to species distribution modeling
 
@@ -353,7 +355,7 @@ Recent contributions to the analysis of ecological novelty suggest that some met
 
 Transparent communication of uncertainty, meaning that it is both spatially explicit, quantified, and expressed under a risk set by the user, is important: we do not expect a fully trained model to always be certain, as some areas are genuinely more difficult to predict. For example, small organisms are more inherently stochastic #cite(<Soininen2013>); any form of stochastic event will drive species distribution even when there is strong environmental signal #cite(<Mohd2016>); these stochastic events can even manifest in areas that are close to the species' environmental optimum #cite(<Dallas2020>). For these reasons, CP can produce interpretable estimates of uncertainty in species distribution models, and does not require the adoption of additional modeling tools or paradigms as it functions on an already trained model.
 
-#add[TK uncertainty in variables - more than aleatoric v. epistemic uncertainty]
+#add[depending on goal, can deal with the unsure predictions differently - e.g. include when monitoring for invasive species, exclude when dealing with core areas that need conservation effort]
 
 CP contributes to dispel what #cite(<Messeri2024>, form: "prose") called the "illusion of understanding", which is often associated with ML models: it generates an understanding of the uncertainty from observations of a pre-trained model, and expresses this uncertainty both in absolute (is the "presence" event in the #change[prediction set]?) and relative (is the point estimate of the score for presence larger than for absence?) terms. Because this technique is computationally efficient and works on pre-trained models, it opens up the opportunity for more systematic uncertainty quantification #cite(<Zurell2020>) in SDMs. CP, in short, can deliver the "maps of ignorance" that #cite(<Rocchini2011>, form: "prose") argued for: how difficult is it to make a prediction for the range at a given risk level is, in and of itself, an important information to frame the reliability of the results. Finally, CP can provide guidance on the feedback loop between SDM training and field validation #cite(<Johnson2023>) --- areas where the range is certain are a much lower priority for sampling.
 
