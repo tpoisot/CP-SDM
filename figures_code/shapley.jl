@@ -35,6 +35,7 @@ hidespines!(ax2, :l)
 hidespines!(ax2, :t)
 
 # Ticks
+provider = RasterData(WorldClim2, BioClim)
 vnames = layers(provider)[variables(sdm)[vord]]
 ax3 = Axis(f[2, 2], ylabel="Relative importance", xticks=(1:length(vord), vnames))
 surea_imp = [mean(abs.(mask(ex, nodata(sure_absence, false)))) for ex in S]

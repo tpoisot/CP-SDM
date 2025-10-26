@@ -1,7 +1,7 @@
 
 # Big figure with range and uncertainty
 
-bins = LinRange(0.0, round(quantile(bsvaria, 0.9); digits=2), 80)
+bins = LinRange(0.0, round(quantile(bootstrap_variability, 0.93); digits=2), 100)
 hiparams = (; bins=bins, normalization=:pdf)
 
 f = Figure(; size=(1200, 600))
@@ -10,24 +10,32 @@ for p in polygons
     poly!(ax, p, color=:grey95)
     lines!(ax, p, color=:grey10)
 end
-heatmap!(ax, nodata(sure_presence, false), colormap=[:forestgreen])
+heatmap!(ax, nodata(sure_presence, false), colormap=[:darkgreen])
 heatmap!(ax, nodata(unsure, false), colormap=[:grey70])
 hidespines!(ax)
 hidedecorations!(ax)
 for p in polygons
     lines!(ax, p, color=:grey10)
 end
-contour!(ax, distrib, color=:red, levels=1)
+contour!(ax, current_range, color=:red, levels=1)
+
 ax2 = Axis(f[1, 2], xlabel="Risk level α", ylabel="Range (km²)", yscale=log10)
-lines!(ax2, rlevels, clamp.(surf_presence .+ surf_unsure, 1, Inf), color=:grey70, label="Total range")
-lines!(ax2, rlevels, clamp.(surf_presence, 1, Inf), color=:forestgreen, linestyle=:dash, label="Sure range")
-hlines!(ax2, [sum(mask(cs, nodata(distrib, false)))], color=:black, linestyle=:dot, label="SDM range")
-axislegend(ax2, position=:rb)
+
+x, m, s = _agr(risk_levels, clamp.(surf_presence .+ surf_unsure, 1, Inf))
+errorbars!(ax2, x, m, s, color=:grey70)
+scatter!(ax2, x, m, label="Total range", color=:grey70)
+x, m, s = _agr(risk_levels, clamp.(surf_presence, 1, Inf))
+errorbars!(ax2, x, m, s, color=:darkgreen)
+scatter!(ax2, x, m, label="Sure range", color=:darkgreen)
+hlines!(ax2, [sum(mask(cell_surface, nodata(current_range, false)))], color=:black, linestyle=:dot, label="SDM range")
+axislegend(ax2, position=:lb)
+
 ax3 = Axis(f[2, 2], xlabel="Inter-quantile range (ensemble)")
-hist!(ax3, mask(bsvaria, nodata(sure_absence, false)); color=(:orange, 0.7), label="Sure absence", hiparams...)
-hist!(ax3, mask(bsvaria, nodata(unsure, false)); color=(:grey80, 0.7), label="Unsure", hiparams...)
-hist!(ax3, mask(bsvaria, nodata(sure_presence, false)); color=(:forestgreen, 0.7), label="Sure presence", hiparams...)
+hist!(ax3, mask(bootstrap_variability, nodata(sure_absence, false)); color=(:orange, 0.7), label="Sure absence", hiparams...)
+hist!(ax3, mask(bootstrap_variability, nodata(unsure, false)); color=(:grey80, 0.7), label="Unsure", hiparams...)
+hist!(ax3, mask(bootstrap_variability, nodata(sure_presence, false)); color=(:forestgreen, 0.7), label="Sure presence", hiparams...)
 axislegend(ax3, nbanks=3)
+
 tightlimits!(ax3)
 hideydecorations!(ax3)
 hidespines!(ax3, :r)
