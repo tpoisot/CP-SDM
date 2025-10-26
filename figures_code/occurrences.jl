@@ -6,8 +6,8 @@ for p in polygons
     poly!(ax, p, color=:grey95)
     lines!(ax, p, color=:grey10)
 end
-scatter!(ax, presencelayer, color=:white, strokecolor=:forestgreen, strokewidth=2)
-scatter!(ax, bgpoints, color=:grey30, markersize=4)
+scatter!(ax, records, color=:white, strokecolor=:forestgreen, strokewidth=2)
+#scatter!(ax, bgpoints, color=:grey30, markersize=4)
 hidespines!(ax)
 hidedecorations!(ax)
 C = [ConfusionMatrix(predict(sdm; threshold=false), labels(sdm), t) for t in LinRange(0.0, 1.0, 150)]

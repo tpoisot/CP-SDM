@@ -2,7 +2,6 @@ using CairoMakie
 using SpeciesDistributionToolkit
 const SDT = SpeciesDistributionToolkit
 using Statistics
-import Downloads
 import Dates
 import PrettyTables
 import Random
@@ -20,17 +19,23 @@ if ~ispath(apath)
     mkpath(apath)
 end
 
+# Basic data
+gadm_usa_level1 = getpolygon(PolygonData(GADM, Countries); level=1, country="USA")
+polygons = [
+    gadm_usa_level1["California"],
+    gadm_usa_level1["Idaho"],
+    gadm_usa_level1["Nevada"],
+    gadm_usa_level1["Oregon"],
+    gadm_usa_level1["Washington"],
+]
+landmass = FeatureCollection(polygons)
+records = mask(OccurrencesInterface.__demodata(), landmass);
+
 # Load the functions we need here
 include("utils/theme.jl")
 include("utils/conformal.jl")
 include("utils/novelty.jl")
-include("utils/data.jl")
-
-# Generate pseudo-absences
-presencelayer = mask(first(L), records)
-distance = pseudoabsencemask(DistanceToEvent, presencelayer)
-background = nodata(distance, d -> !(20 <= d <= 300))
-bgpoints = backgroundpoints(background, 3sum(presencelayer))
+#include("utils/data.jl")
 
 # Map of occurrences
 f = Figure()
@@ -38,23 +43,14 @@ ax = Axis(f[1,1])
 for p in polygons
     lines!(ax, p, color=:black)
 end
-scatter!(ax, presencelayer; markersize=6, color=:orange)
-scatter!(ax, bgpoints; markersize=5, color=:grey50)
+scatter!(ax, records; markersize=6, color=:orange)
+#scatter!(ax, bgpoints; markersize=5, color=:grey50)
 current_figure()
 
 # Set up the model - logistic regression with Z-score before
-sdm = SDM(ZScore, Logistic, L, presencelayer, bgpoints)
-hyperparameters!(classifier(sdm), :η, 1e-3) # Slow descent
-hyperparameters!(classifier(sdm), :interactions, :all) # All interactions
-hyperparameters!(classifier(sdm), :epochs, 10000) # Longer training
-
-# Folds
-folds = kfold(sdm)
-
-# Train the model with optimal set of variables, using forward selection and MCC
-# as the measure
-variables!(sdm, ForwardSelection, folds; verbose=true)
+sdm = SDeMo.loadsdm("artifacts/sdm.json")
 threshold!(sdm)
+folds = kfold(sdm)
 
 # VI
 vi = variableimportance(sdm, folds; threshold=false)
@@ -74,18 +70,16 @@ map(κ, cv)
 map(trueskill, cv)
 map(accuracy, cv)
 
-# Range
-distrib = predict(sdm, L; threshold=true)
-
 # Bootstrap to get to uncertainty - we re-train 50 models with the same
 # features, but different bags
 bsdm = Bagging(sdm, 50)
 bsdm |> outofbag |> accuracy # OOB error
 train!(bsdm)
-bsvaria = predict(bsdm, L; threshold=false, consensus=iqr)
+bootstrap_variability = predict(bsdm, L; threshold=false, consensus=iqr)
 
 # Prediction based on baseline data
-prd = predict(sdm, L; threshold=false)
+current_range = predict(sdm, L; threshold=true)
+current_score = predict(sdm, L; threshold=false)
 
 renderfigure("prediction")
 
