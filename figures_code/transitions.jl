@@ -4,11 +4,6 @@ function _palette(; low=colorant"#e8e8e8", high=colorant"#120fe3", breaks=3)
     return ColorSchemes.weighted_color_mean.(breakpoints, high, low)
 end
 
-# Record the layers by quantiles
-function discretize(layer, n::Integer)
-    return (x -> round(Int64, x)).(rescale(layer, 1, n))
-end
-
 # Get the palettes
 nbreaks = 3
 
@@ -29,24 +24,18 @@ for i in eachindex(category)
     category[i] = LinearIndices(colormatrix)[m1[i], m2[i]]
 end
 
-f = Figure()
-ax = [Axis(f[x...]; aspect=DataAspect()) for x in [(1, 1), (1, 2), (2, 1)]]
-heatmap!(ax[1], m1, colormap=colormap1)
-heatmap!(ax[2], m2, colormap=colormap2)
-heatmap!(ax[3], category, colormap=vec(colormatrix))
-lines!(ax[3], landmass, color=:black)
+f = Figure(; size=(1200, 600))
+ax1 = Axis(f[1, 1]; aspect=DataAspect())
+ax2 = Axis(f[1, 2]; aspect=DataAspect())
+heatmap!(ax1, category, colormap=vec(colormatrix))
+lines!(ax1, landmass, color=:black)
 f
-
 
 total_area = sum(cell_surface)
 current_bars = [sum(mask(cell_surface, nodata(current_uncertainty .== i, false))) for i in 0:2]
 future_bars = [sum(mask(cell_surface, nodata(future_uncertainty .== i, false))) for i in 0:2]
 current_bars ./= total_area
 future_bars ./= total_area
-
-# 
-f = Figure()
-ax = Axis(f[1, 1])
 
 # Get the transition matrix
 trs = zeros(Float64, 3, 3)
@@ -83,16 +72,16 @@ for i in 1:3
         Δt = right_top - left_top
         bottomshift = left_bottom .+ Δb .* vshift
         topshift = left_top .+ Δt .* vshift
-        band!(ax, LinRange(0.1, 0.9, length(vshift)), bottomshift, topshift, color=colormatrix[i, j], alpha=0.5)
+        band!(ax2, LinRange(0.1, 0.9, length(vshift)), bottomshift, topshift, color=colormatrix[i, j], alpha=0.5)
     end
 end
 
-poly!(ax, Point2f[(0, 0), (0.1, 0), (0.1, current_bars[1]), (0, current_bars[1])], color=colormap1[1], strokecolor=:black, strokewidth=1)
-poly!(ax, Point2f[(0, current_bars[1]), (0.1, current_bars[1]), (0.1, current_bars[1] + current_bars[2]), (0, current_bars[1] + current_bars[2])], color=colormap1[2], strokecolor=:black, strokewidth=1)
-poly!(ax, Point2f[(0, current_bars[1] + current_bars[2]), (0.1, current_bars[1] + current_bars[2]), (0.1, 1), (0, 1)], color=colormap1[3], strokecolor=:black, strokewidth=1)
+poly!(ax2, Point2f[(0, 0), (0.1, 0), (0.1, current_bars[1]), (0, current_bars[1])], color=colormap1[1], strokecolor=:black, strokewidth=1)
+poly!(ax2, Point2f[(0, current_bars[1]), (0.1, current_bars[1]), (0.1, current_bars[1] + current_bars[2]), (0, current_bars[1] + current_bars[2])], color=colormap1[2], strokecolor=:black, strokewidth=1)
+poly!(ax2, Point2f[(0, current_bars[1] + current_bars[2]), (0.1, current_bars[1] + current_bars[2]), (0.1, 1), (0, 1)], color=colormap1[3], strokecolor=:black, strokewidth=1)
 
-poly!(ax, Point2f[(1, 0), (0.9, 0), (0.9, future_bars[1]), (1, future_bars[1])], color=colormap2[1], strokecolor=:black, strokewidth=1)
-poly!(ax, Point2f[(1, future_bars[1]), (0.9, future_bars[1]), (0.9, future_bars[1] + future_bars[2]), (1, future_bars[1] + future_bars[2])], color=colormap2[2], strokecolor=:black, strokewidth=1)
-poly!(ax, Point2f[(1, future_bars[1] + future_bars[2]), (0.9, future_bars[1] + future_bars[2]), (0.9, 1), (1, 1)], color=colormap2[3], strokecolor=:black, strokewidth=1)
+poly!(ax2, Point2f[(1, 0), (0.9, 0), (0.9, future_bars[1]), (1, future_bars[1])], color=colormap2[1], strokecolor=:black, strokewidth=1)
+poly!(ax2, Point2f[(1, future_bars[1]), (0.9, future_bars[1]), (0.9, future_bars[1] + future_bars[2]), (1, future_bars[1] + future_bars[2])], color=colormap2[2], strokecolor=:black, strokewidth=1)
+poly!(ax2, Point2f[(1, future_bars[1] + future_bars[2]), (0.9, future_bars[1] + future_bars[2]), (0.9, 1), (1, 1)], color=colormap2[3], strokecolor=:black, strokewidth=1)
 f
 

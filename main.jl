@@ -99,7 +99,7 @@ cell_surface = cellarea(current_range)
 cmodel = deepcopy(sdm)
 
 # Sensitivity analysis for the miscoverage rate
-risk_levels = repeat(LinRange(0.7, 0.99, 25); inner=15)
+risk_levels = repeat(LinRange(0.7, 0.99, 15); inner=5)
 qs = [conformal(cmodel, holdout(cmodel)...; α=1.0-risk) for risk in risk_levels]
 
 function _agr(rl, qs)
@@ -178,23 +178,50 @@ smimp = last(findmax(svimp))
 
 renderfigure("shapley")
 
-# Clim change
-projected_predictions = [predict(sdm, v; threshold=false) for (k, v) in F]
-projected_ranges = [predict(sdm, v; threshold=true) for (k, v) in F]
-projected_prediction = mosaic(median, projected_predictions)
+# Climate change figures
 
-heatmap(projected_prediction)
+# First we get the layers for future climates
+
+future_climates = filter(contains("future"), readdir("artifacts/"; join=true))
+
+F = [
+    [SimpleSDMLayers._read_geotiff(future_file; bandnumber=i) for i in 1:19] for future_file in future_climates
+]
+
+projected_scores = [predict(sdm, f; threshold=false) for f in F]
+projected_ranges = [predict(sdm, f; threshold=true) for f in F]
+projected_score = mosaic(median, projected_scores)
+projected_range = mosaic(majority, projected_ranges)
+
+heatmap(projected_score)
 contour!(projected_range)
 current_figure()
 
-projected_range = mosaic(majority, projected_ranges)
-
 # Conformal CP
-mc_q = [conformal(sdm, f...; α=0.05) for f in kfold(sdm)]
-q = vec(median(vcat([hcat(q...) for q in mc_q]...), dims= 1))
-Cp, Ca = credibleclasses(prd, q₊, q₋)
+fCp, fCa = credibleclasses(projected_score, q₊, q₋)
 
-fCp, fCa = credibleclasses(projected_prediction, q...)
+# Make two layers: for current and future uncertain areas
+current_uncertainty = similar(current_range, Int64)
+future_uncertainty = similar(current_range, Int64)
+
+function _decide(k, pos, neg)
+    p = pos[k]
+    n = neg[k]
+    if p & n 
+        return 1
+    end
+    if p & (! n)
+        return 2
+    end
+    return 0
+end
+
+for k in keys(current_uncertainty)
+    future_uncertainty[k] = _decide(k, fCp, fCa)
+    current_uncertainty[k] = _decide(k, Cp, Ca)
+end
+
+renderfigure("transitions")
 
 ft_sure_presence = fCp .& (.!fCa)
 ft_sure_absence = fCa .& (.!fCp)
