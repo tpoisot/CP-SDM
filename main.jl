@@ -240,3 +240,4 @@ novel_climates = novelty(L, Fmed, variables(sdm)) # Emergence of novel climates
 lost_climates = novelty(Fmed, L, variables(sdm)) # Loss of historical climates
 
 renderfigure("novelty")
+renderfigure("climateloss")

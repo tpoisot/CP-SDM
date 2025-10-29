@@ -10,12 +10,12 @@ function discretize(layer, n::Integer)
 end
 
 # Get the palettes
-nbreaks = 5
+nbreaks = 4
 
 # 
 low = colorant"#e8e8e8"
-h1 = colorant"#c8b35a"
-h2 = colorant"#9972af"
+h1 = colorant"#be64ac"
+h2 = colorant"#5ac8c8"
 
 colormap1 = _palette(; low=low, high=h1, breaks=nbreaks)
 colormap2 = _palette(; low=low, high=h2, breaks=nbreaks)
@@ -30,24 +30,20 @@ for i in eachindex(category)
 end
 
 f = Figure(; size=(1200, 600))
-ax = Axis(f[1:2, 1:2]; aspect=DataAspect())
+ax = Axis(f[1:5, 1:2]; aspect=DataAspect())
 heatmap!(ax, category, colormap=vec(colormatrix))
 lines!(ax, landmass, color=:black)
 
-ax_ua = Axis(f[1, 3])
-ax_uu = Axis(f[1, 4])
-ax_pu = Axis(f[2, 4])
-
-ax_leg = Axis(f[2, 3]; aspect=1)
+ax_leg = Axis(f[4:5, 3:4]; aspect=DataAspect())
 
 xp = LinRange(-1, 1, size(colormatrix, 1)+1)
 yp = LinRange(-1, 1, size(colormatrix, 2)+1)
 
 θ = π / 4
 for i in axes(colormatrix, 1)
-    xc = (xp[i], xp[i+1]) .+ (0.01, -0.01)
+    xc = (xp[i], xp[i+1]) .+ (0.015, -0.015)
     for j in axes(colormatrix, 2)
-        yc = (yp[j], yp[j+1]) .+ (0.01, -0.01)
+        yc = (yp[j], yp[j+1]) .+ (0.015, -0.015)
         corners = [(xc[1], yc[1]), (xc[2], yc[1]), (xc[2], yc[2]), (xc[1], yc[2])]
         r_corners = [
             (c[1] * cos(θ) - c[2] * sin(θ), c[2] * cos(θ) + c[1] * sin(θ))
@@ -113,5 +109,35 @@ annotation!(ax_leg, -1.1, 1.1, -sqrt(2), 0,
     style = Ann.Styles.LineArrow(),
     labelspace = :data
 )
+
+f
+
+ax_unc = Axis(f[1:3, 3:4])
+
+categories = Int64[]
+values = Float64[]
+dodge = Int64[]
+
+
+
+u_u = nodata((current_uncertainty.==1) .* (future_uncertainty.==1), false)
+u_a = nodata((current_uncertainty.==1) .* (future_uncertainty.==0), false)
+p_u = nodata((current_uncertainty.==2) .* (future_uncertainty.==1), false)
+p_p = nodata((current_uncertainty.==2) .* (future_uncertainty.==2), false)
+
+for (i, l) in enumerate([u_a, u_u, p_u, p_p])
+    append!(categories, fill(i, 2length(l)))
+    append!(values, mask(lost_climates, l))
+    append!(values, mask(novel_climates, l))
+    append!(dodge, fill(1, length(l)))
+    append!(dodge, fill(2, length(l)))
+end
+
+boxplot!(ax_unc, categories, values, dodge = dodge, show_notch = false, color = map(d->d==1 ? h2 : h1, dodge))
+
+hidespines!(ax_leg)
+hidedecorations!(ax_leg)
+hidespines!(ax)
+hidedecorations!(ax)
 
 f
