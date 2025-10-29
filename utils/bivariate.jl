@@ -10,89 +10,108 @@ function discretize(layer, n::Integer)
 end
 
 # Get the palettes
-nbreaks = 3
+nbreaks = 5
 
 # 
-low = colorant"#ffffff"
-h1 = colorant"#12A500"
-h2 = colorant"#9200A5"
+low = colorant"#e8e8e8"
+h1 = colorant"#c8b35a"
+h2 = colorant"#9972af"
 
 colormap1 = _palette(; low=low, high=h1, breaks=nbreaks)
 colormap2 = _palette(; low=low, high=h2, breaks=nbreaks)
-colormatrix = [ColorBlendModes.blend.(c1, c2; mode=BlendDarken) for c1 in colormap1, c2 in colormap2]
+colormatrix = [ColorBlendModes.blend.(c1, c2; mode=BlendMultiply) for c1 in colormap1, c2 in colormap2]
 
 # Discrete maps
-m1 = current_uncertainty .+ 1
-m2 = future_uncertainty .+ 1
+m1 = discretize(novel_climates, nbreaks)
+m2 = discretize(lost_climates, nbreaks)
 category = similar(m1)
 for i in eachindex(category)
     category[i] = LinearIndices(colormatrix)[m1[i], m2[i]]
 end
 
-f = Figure()
-ax = [Axis(f[x...]; aspect=DataAspect()) for x in [(1, 1), (1, 2), (2, 1)]]
-heatmap!(ax[1], m1, colormap=colormap1)
-heatmap!(ax[2], m2, colormap=colormap2)
-heatmap!(ax[3], category, colormap=vec(colormatrix))
-lines!(ax[3], landmass, color=:black)
-f
+f = Figure(; size=(1200, 600))
+ax = Axis(f[1:2, 1:2]; aspect=DataAspect())
+heatmap!(ax, category, colormap=vec(colormatrix))
+lines!(ax, landmass, color=:black)
 
+ax_ua = Axis(f[1, 3])
+ax_uu = Axis(f[1, 4])
+ax_pu = Axis(f[2, 4])
 
-total_area = sum(cell_surface)
-current_bars = [sum(mask(cell_surface, nodata(current_uncertainty .== i, false))) for i in 0:2]
-future_bars = [sum(mask(cell_surface, nodata(future_uncertainty .== i, false))) for i in 0:2]
-current_bars ./= total_area
-future_bars ./= total_area
+ax_leg = Axis(f[2, 3]; aspect=1)
 
-# 
-f = Figure()
-ax = Axis(f[1, 1])
+xp = LinRange(-1, 1, size(colormatrix, 1)+1)
+yp = LinRange(-1, 1, size(colormatrix, 2)+1)
 
-# Get the transition matrix
-trs = zeros(Float64, 3, 3)
-for cur in [0, 1, 2]
-    this_cur = current_uncertainty .== cur
-    for fut in [0, 1, 2]
-        this_fut = future_uncertainty .== fut
-        this_tr_area = sum(mask(cell_surface, nodata(this_cur .& this_fut, false)))
-        trs[cur+1, fut+1] = this_tr_area
-    end
-end
-trs ./= total_area
-
-cur_bars = vcat(0.0, current_bars .* total_area...)
-ccur_bars = cumsum(cur_bars)
-fut_bars = vcat(0.0, future_bars .* total_area...)
-cfut_bars = cumsum(fut_bars)
-
-for i in 1:3
-    for j in 1:3
-
-        tr = trs[i, j] * total_area
-
-        left_bottom = ccur_bars[i] / total_area
-        right_bottom = cfut_bars[j] / total_area
-        left_top = ccur_bars[i] / total_area + cur_bars[i+1] / total_area * (tr / cur_bars[i+1])
-        right_top = cfut_bars[j] / total_area + fut_bars[j+1] / total_area * (tr / fut_bars[j+1])
-
-        # Transition bottom
-
-        quad_easing(x) = x < 0.5 ? 2 * (x^2) : 1 - (-2 * x + 2)^2 / 2
-        vshift = quad_easing.(LinRange(0.0, 1.0, 10))
-        Δb = right_bottom - left_bottom
-        Δt = right_top - left_top
-        bottomshift = left_bottom .+ Δb .* vshift
-        topshift = left_top .+ Δt .* vshift
-        band!(ax, LinRange(0.1, 0.9, length(vshift)), bottomshift, topshift, color=colormatrix[i, j], alpha=0.5)
+θ = π / 4
+for i in axes(colormatrix, 1)
+    xc = (xp[i], xp[i+1]) .+ (0.01, -0.01)
+    for j in axes(colormatrix, 2)
+        yc = (yp[j], yp[j+1]) .+ (0.01, -0.01)
+        corners = [(xc[1], yc[1]), (xc[2], yc[1]), (xc[2], yc[2]), (xc[1], yc[2])]
+        r_corners = [
+            (c[1] * cos(θ) - c[2] * sin(θ), c[2] * cos(θ) + c[1] * sin(θ))
+            for c in corners
+        ]
+        #scatter!(ax_leg, [xr], [yr], color=colormatrix[i,j])
+        poly!(ax_leg, r_corners, color=colormatrix[i,j], strokecolor=:black, strokewidth=0.5)
     end
 end
 
-poly!(ax, Point2f[(0, 0), (0.1, 0), (0.1, current_bars[1]), (0, current_bars[1])], color=colormap1[1], strokecolor=:black, strokewidth=1)
-poly!(ax, Point2f[(0, current_bars[1]), (0.1, current_bars[1]), (0.1, current_bars[1] + current_bars[2]), (0, current_bars[1] + current_bars[2])], color=colormap1[2], strokecolor=:black, strokewidth=1)
-poly!(ax, Point2f[(0, current_bars[1] + current_bars[2]), (0.1, current_bars[1] + current_bars[2]), (0.1, 1), (0, 1)], color=colormap1[3], strokecolor=:black, strokewidth=1)
+annotation!(ax_leg, 1.1, 1.1, 0, sqrt(2),
+    text = "Novel climates\nemerge",
+    path = Ann.Paths.Corner(),
+    style = Ann.Styles.LineArrow(),
+    labelspace = :data
+)
 
-poly!(ax, Point2f[(1, 0), (0.9, 0), (0.9, future_bars[1]), (1, future_bars[1])], color=colormap2[1], strokecolor=:black, strokewidth=1)
-poly!(ax, Point2f[(1, future_bars[1]), (0.9, future_bars[1]), (0.9, future_bars[1] + future_bars[2]), (1, future_bars[1] + future_bars[2])], color=colormap2[2], strokecolor=:black, strokewidth=1)
-poly!(ax, Point2f[(1, future_bars[1] + future_bars[2]), (0.9, future_bars[1] + future_bars[2]), (0.9, 1), (1, 1)], color=colormap2[3], strokecolor=:black, strokewidth=1)
+annotation!(ax_leg, 1.1, 1.1, sqrt(2), 0,
+    text = "Novel climates\nemerge",
+    path = Ann.Paths.Corner(),
+    style = Ann.Styles.LineArrow(),
+    labelspace = :data
+)
+
+annotation!(ax_leg, 1.1, -1.1, sqrt(2), 0,
+    text = "Hist. climates\nremain",
+    path = Ann.Paths.Corner(),
+    style = Ann.Styles.LineArrow(),
+    labelspace = :data
+)
+
+annotation!(ax_leg, 1.1, -1.1, 0, -sqrt(2),
+    text = "Hist. climates\nremain",
+    path = Ann.Paths.Corner(),
+    style = Ann.Styles.LineArrow(),
+    labelspace = :data
+)
+
+annotation!(ax_leg, -1.1, -1.1, 0, -sqrt(2),
+    text = "No novel\nclimates",
+    path = Ann.Paths.Corner(),
+    style = Ann.Styles.LineArrow(),
+    labelspace = :data
+)
+
+annotation!(ax_leg, -1.1, -1.1, -sqrt(2), 0,
+    text = "No novel\nclimates",
+    path = Ann.Paths.Corner(),
+    style = Ann.Styles.LineArrow(),
+    labelspace = :data
+)
+
+annotation!(ax_leg, -1.1, 1.1, 0, sqrt(2),
+    text = "Hist. climates\nare lost",
+    path = Ann.Paths.Corner(),
+    style = Ann.Styles.LineArrow(),
+    labelspace = :data
+)
+
+annotation!(ax_leg, -1.1, 1.1, -sqrt(2), 0,
+    text = "Hist. climates\nare lost",
+    path = Ann.Paths.Corner(),
+    style = Ann.Styles.LineArrow(),
+    labelspace = :data
+)
+
 f
-
