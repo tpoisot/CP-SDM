@@ -1,19 +1,11 @@
-"""
-Measure the novelty based on two matrices with the correct observation. The
-reference is always given as the data from which the mean and standard deviation
-are applied. The flip keyword is used to decide which dataset is used as a the
-baseline. If flip = true, the target is used as the reference, i.e. we get one
-output for every point in the target dataset. Otherwise, we get one output for
-every point in the reference dataset (default).
-"""
-function _novelty_source_ref(reference, target; flip=false)
-    μ = vec(mean(reference; dims=2))
-    σ = vec(mean(reference; dims=2))
-    R = (reference .- μ) ./ σ
-    T = (target .- μ) ./ σ
+function _novelty_source_ref(baseline, comparison)
+    μ = vec(mean(baseline; dims=2))
+    σ = vec(mean(baseline; dims=2))
+    B = (baseline .- μ) ./ σ
+    C = (comparison .- μ) ./ σ
 
     # We create an array to store the minimum distances
-    idx = 1:(flip ? size(T, 2) : size(R, 2))
+    idx = 1:size(B, 2)
     D = zeros(Float32, length(idx))
 
     # And then we chunk for parallel processing
@@ -24,9 +16,8 @@ function _novelty_source_ref(reference, target; flip=false)
     tasks = map(data_chunks) do chunk
         Threads.@spawn begin
             for i in chunk
-                diffs = flip ? (T[:, i] .- R) : (R[:, i] .- T)
-                diffs .*= diffs
-                rmse = sqrt.(vec(sum(diffs; dims=2)))
+                Δ = (B[:,i] .- C) .^2.0
+                rmse = sqrt.(vec(sum(Δ; dims=1)))
                 D[i] = first(findmin(rmse))
             end
         end
@@ -47,7 +38,7 @@ function novelty(model::SDM, layers::Vector{<:SDMLayer}; kwargs...)
     reference = instance(model, :)
     target = SDT._X_from_layers(layers[variables(model)])
     dist = similar(first(layers))
-    nov = _novelty_source_ref(reference, target; kwargs...)
+    nov = _novelty_source_ref(target, reference; kwargs...)
     return SpeciesDistributionToolkit.burnin(dist, nov)
 end
 

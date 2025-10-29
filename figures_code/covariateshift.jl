@@ -10,12 +10,12 @@ function discretize(layer, n::Integer)
 end
 
 # Get the palettes
-nbreaks = 5
+nbreaks = 4
 
 # 
 low = colorant"#e8e8e8"
-h1 = colorant"#be64ac"
-h2 = colorant"#5ac8c8"
+h1 = colorant"#64acbe"
+h2 = colorant"#c85a5a"
 
 colormap1 = _palette(; low=low, high=h1, breaks=nbreaks)
 colormap2 = _palette(; low=low, high=h2, breaks=nbreaks)

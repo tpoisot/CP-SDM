@@ -27,7 +27,7 @@ landmass = FeatureCollection(polygons)
 
 # Bounding box to clip the layers, with a padding to generate the
 # pseudo-absences - we will use the strict limit of the polygons later on
-extent = SDT.boundingbox(landmass; padding=2.0)
+extent = SDT.boundingbox(landmass; padding=3.0)
 
 # Get the layers
 provider = RasterData(WorldClim2, BioClim)
@@ -38,7 +38,7 @@ presencelayer = mask(M, records)
 distance = pseudoabsencemask(DistanceToEvent, presencelayer)
 presencelayer = trim(mask!(presencelayer, landmass))
 distance = trim(mask!(distance, landmass))
-background = nodata(distance, d -> !(20 <= d <= 250))
+background = nodata(distance, d -> !(25 <= d <= 220))
 absencelayer = backgroundpoints(background, 3sum(presencelayer))
 
 # Test
@@ -104,6 +104,6 @@ F = [
 
 Fmed = [mosaic(median, [F[m][i] for m in keys(F)]) for i in eachindex(L)]
 
-current_shift = novelty(Fmed, sdm)
-future_shift = novelty(L, sdm)
+current_shift = novelty(L, sdm)
+future_shift = novelty(Fmed, sdm)
 SimpleSDMLayers.save("artifacts/covariateshift.tif", [current_shift, future_shift])
