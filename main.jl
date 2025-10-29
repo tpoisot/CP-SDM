@@ -231,13 +231,9 @@ ft_unsure_out = ft_unsure .& (.!projected_range)
 
 renderfigure("gainloss")
 
-# Code for novelty - we take the median value for each pixel here purely to save
-# time, otherwise this is a very long step for very minor differences in the end
+# We read the novelty files instead of running them every time we generate the figures
+novel_climates, lost_climates = SimpleSDMLayers._read_geotiff("artifacts/novely.tig"; bandnumber=i) for i in 1:2]
 
-Fmed = [mosaic(median, [F[m][i] for m in keys(F)]) for i in eachindex(L)]
-
-novel_climates = novelty(L, Fmed, variables(sdm)) # Emergence of novel climates
-lost_climates = novelty(Fmed, L, variables(sdm)) # Loss of historical climates
-
+# Final plots for the novelty analysis
 renderfigure("novelty")
 renderfigure("climateloss")

@@ -90,3 +90,23 @@ for gcm in GCMs
 
     SimpleSDMLayers.save("artifacts/future-SSP370-$(gcm).tif", tf)
 end
+
+
+
+# Code for novelty - we take the median value for each pixel here purely to save
+# time, otherwise this is a very long step for very minor differences in the end
+
+
+include(joinpath(pwd(), "utils/novelty.jl"))
+future_climates = filter(contains("future"), readdir("artifacts/"; join=true))
+
+F = [
+    [SimpleSDMLayers._read_geotiff(future_file; bandnumber=i) for i in 1:19] for future_file in future_climates
+]
+
+
+Fmed = [mosaic(median, [F[m][i] for m in keys(F)]) for i in eachindex(L)]
+
+novel_climates = novelty(L, Fmed, variables(sdm)) # Emergence of novel climates
+lost_climates = novelty(Fmed, L, variables(sdm)) # Loss of historical climates
+SimpleSDMLayers.save("artifacts/novelty.tif", [novel_climates, lost_climates])
