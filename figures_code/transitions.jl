@@ -16,6 +16,7 @@ colormap1 = _palette(; low=low, high=h1, breaks=nbreaks)
 colormap2 = _palette(; low=low, high=h2, breaks=nbreaks)
 colormatrix = [ColorBlendModes.blend.(c1, c2; mode=BlendMultiply) for c1 in colormap1, c2 in colormap2]
 
+
 # Discrete maps
 m1 = current_uncertainty .+ 1
 m2 = future_uncertainty .+ 1
@@ -26,7 +27,7 @@ end
 
 f = Figure(; size=(1200, 600))
 ax1 = Axis(f[1, 1]; aspect=DataAspect())
-ax2 = Axis(f[1, 2])#; aspect=DataAspect())
+ax2 = Axis(f[1, 2]; aspect=0.8)
 heatmap!(ax1, category, colormap=vec(colormatrix))
 lines!(ax1, landmass, color=:black)
 f
@@ -60,13 +61,13 @@ current_boxes = Tuple{Float64, Float64}[]
 future_boxes = Tuple{Float64, Float64}[]
 
 for i in eachindex(future_sum)
-    spacer = (i-1)*0.05
+    spacer = (i-1)*0.1
     start_at = i == 1 ? 0.0 : sum(future_sum[1:(i-1)]) + spacer
     stop_at = sum(future_sum[1:i]) + spacer
     push!(future_boxes, (start_at, stop_at))
 end
 for i in eachindex(current_sum)
-    spacer = (i-1)*0.05
+    spacer = (i-1)*0.1
     start_at = i == 1 ? 0.0 : sum(current_sum[1:(i-1)]) + spacer
     stop_at = sum(current_sum[1:i]) + spacer
     push!(current_boxes, (start_at, stop_at))
@@ -93,7 +94,7 @@ for i in axes(T, 1)
             vshift = quad_easing.(LinRange(0.0, 1.0, 50))
             Δb = f_start - c_start
             Δt = f_stop - c_stop
-            xt = LinRange(0.1, 0.9, length(vshift))
+            xt = LinRange(0.05, 0.95, length(vshift))
             yb = c_start .+ Δb .* vshift
             yt = c_stop .+ Δt .* vshift
             band!(ax2, xt, yt, yb, color=colormatrix[i,j])
@@ -104,13 +105,13 @@ end
 for i in eachindex(current_boxes)
     cb = current_boxes[i]
     fb = future_boxes[i]
-    poly!(ax2, Point2f[(0, cb[1]), (0.1, cb[1]), (0.1, cb[2]), (0, cb[2])], color=colormap1[i], strokecolor=:black, strokewidth=1)
-    poly!(ax2, Point2f[(0.9, fb[1]), (1.0,fb[1]), (1.0, fb[2]), (0.9, fb[2])], color=colormap2[i], strokecolor=:black, strokewidth=1)
+    poly!(ax2, Point2f[(0, cb[1]), (0.05, cb[1]), (0.05, cb[2]), (0, cb[2])], color=colormap1[i], strokecolor=:black, strokewidth=1)
+    poly!(ax2, Point2f[(0.95, fb[1]), (1.0,fb[1]), (1.0, fb[2]), (0.95, fb[2])], color=colormap2[i], strokecolor=:black, strokewidth=1)
 end
 
-for (i, l) in enumerate(["Asbent", "Unsure", "Present"])
-    text!(ax2, [(-0.1, mean(current_boxes[i]))], text = l, rotation=π/2, align=(:center, :top))
-    text!(ax2, [(1.1, mean(future_boxes[i]))], text = l, rotation=π/2, align=(:center, :bottom))
+for (i, l) in enumerate(["Absent", "Unsure", "Present"])
+    text!(ax2, [(-0.08, mean(current_boxes[i]))], text = l, rotation=π/2, align=(:center, :top))
+    text!(ax2, [(1.08, mean(future_boxes[i]))], text = l, rotation=π/2, align=(:center, :bottom))
 end
 
 hidespines!(ax1)
