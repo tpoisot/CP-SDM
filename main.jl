@@ -232,8 +232,8 @@ ft_unsure_out = ft_unsure .& (.!projected_range)
 renderfigure("gainloss")
 
 # We read the novelty files instead of running them every time we generate the figures
-novel_climates, lost_climates = SimpleSDMLayers._read_geotiff("artifacts/novely.tig"; bandnumber=i) for i in 1:2]
+novel_climates, lost_climates = SimpleSDMLayers._read_geotiff("artifacts/novely.tif"; bandnumber=i) for i in 1:2]
 
 # Final plots for the novelty analysis
 renderfigure("novelty")
-renderfigure("climateloss")
+renderfigure("covariateshift")

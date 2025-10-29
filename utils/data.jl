@@ -107,6 +107,6 @@ F = [
 
 Fmed = [mosaic(median, [F[m][i] for m in keys(F)]) for i in eachindex(L)]
 
-novel_climates = novelty(L, Fmed, variables(sdm)) # Emergence of novel climates
-lost_climates = novelty(Fmed, L, variables(sdm)) # Loss of historical climates
+novel_climates = novelty(Fmed, sdm)
+lost_climates = novelty(L, sdm)
 SimpleSDMLayers.save("artifacts/novelty.tif", [novel_climates, lost_climates])

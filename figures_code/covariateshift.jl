@@ -10,7 +10,7 @@ function discretize(layer, n::Integer)
 end
 
 # Get the palettes
-nbreaks = 4
+nbreaks = 5
 
 # 
 low = colorant"#e8e8e8"
