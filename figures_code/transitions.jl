@@ -8,9 +8,9 @@ end
 nbreaks = 3
 
 # 
-low = colorant"#ffffff"
-h1 = colorant"#629677"
-h2 = colorant"#F98948"
+low = colorant"#f8f8f8"
+h1 = colorant"#73ae80"
+h2 = colorant"#6c83b5"
 
 colormap1 = _palette(; low=low, high=h1, breaks=nbreaks)
 colormap2 = _palette(; low=low, high=h2, breaks=nbreaks)
@@ -46,49 +46,76 @@ for cur in [0, 1, 2]
     end
 end
 
-# Calculate cumulative positions for bars (in absolute space)
-ccur_bars = cumsum(vcat(0.0, current_bars))
-cfut_bars = cumsum(vcat(0.0, future_bars))
+# Transition matrix (normalized by extent)
 
-# Draw the flow bands
-for i in 1:3  # Current state (left bar)
-    # Left bar bounds
-    left_bar_bottom = ccur_bars[i]
-    left_bar_top = ccur_bars[i+1]
-    left_bar_height = left_bar_top - left_bar_bottom
-    # Calculate internal divisions in left bar (where flows to different future states originate)
-    left_internal_cumsum = cumsum(vcat(0.0, trs[i, :]./left_bar_height...))
-    for j in 1:3  # Future state (right bar)
-        if trs[i, j] > 0.0
-            # Right bar bounds
-            right_bar_bottom = cfut_bars[j]
-            right_bar_top = cfut_bars[j+1]
-            right_bar_height = right_bar_top - right_bar_bottom
-            # Calculate internal divisions in right bar (where flows from different current states arrive)
-            right_internal_cumsum = cumsum(vcat(0.0, trs[:,j]./right_bar_height...))
-            # Calculate the absolute positions for this flow band
-            left_bottom = left_bar_bottom + left_internal_cumsum[j] * left_bar_height
-            left_top = left_bar_bottom + left_internal_cumsum[j+1] * left_bar_height
-            right_bottom = right_bar_bottom + right_internal_cumsum[i] * right_bar_height
-            right_top = right_bar_bottom + right_internal_cumsum[i+1] * right_bar_height
-            # Create smooth transition using easing function
+T = trs ./ total_area
+
+future_sum = sum(T, dims=1) # Future data
+current_sum = sum(T, dims=2) # Current data
+
+Tf = T ./ future_sum # row sums to 1
+Tc = T ./ current_sum # col sums to 1
+
+current_boxes = Tuple{Float64, Float64}[]
+future_boxes = Tuple{Float64, Float64}[]
+
+for i in eachindex(future_sum)
+    spacer = (i-1)*0.05
+    start_at = i == 1 ? 0.0 : sum(future_sum[1:(i-1)]) + spacer
+    stop_at = sum(future_sum[1:i]) + spacer
+    push!(future_boxes, (start_at, stop_at))
+end
+for i in eachindex(current_sum)
+    spacer = (i-1)*0.05
+    start_at = i == 1 ? 0.0 : sum(current_sum[1:(i-1)]) + spacer
+    stop_at = sum(current_sum[1:i]) + spacer
+    push!(current_boxes, (start_at, stop_at))
+end
+
+for i in axes(T, 1)
+    cb = current_boxes[i]
+    ch = cb[2] - cb[1] # Height of current box
+    for j in axes(T, 2)
+        fb = future_boxes[j]
+        fh = fb[2] - fb[1] # Height of future box
+        # Starting point from the current box
+        if Tc[i,j] > 0.0
+            csr = j == 1 ? 0.0 : sum(Tc[i,1:(j-1)]) # Current start (relative)
+            cer = sum(Tc[i,1:j]) # Current end (relative)
+            c_start = cb[1] + ch * csr
+            c_stop = cb[1] + ch * cer
+            fsr = i == 1 ? 0.0 : sum(Tf[1:(i-1),j]) # Current start (relative)
+            fer = sum(Tf[1:i,j]) # Current end (relative)
+            f_start = fb[1] + fh * fsr
+            f_stop = fb[1] + fh * fer
+            # Calculate the band
             quad_easing(x) = x < 0.5 ? 2 * (x^2) : 1 - (-2 * x + 2)^2 / 2
-            vshift = quad_easing.(LinRange(0.0, 1.0, 20))
-            Δb = right_bottom - left_bottom
-            Δt = right_top - left_top
-            bottomshift = left_bottom .+ Δb .* vshift
-            topshift = left_top .+ Δt .* vshift
-            band!(ax2, LinRange(0.1, 0.9, length(vshift)), bottomshift, topshift,
-                color=colormatrix[i, j], alpha=0.8)
+            vshift = quad_easing.(LinRange(0.0, 1.0, 50))
+            Δb = f_start - c_start
+            Δt = f_stop - c_stop
+            xt = LinRange(0.1, 0.9, length(vshift))
+            yb = c_start .+ Δb .* vshift
+            yt = c_stop .+ Δt .* vshift
+            band!(ax2, xt, yt, yb, color=colormatrix[i,j])
         end
     end
 end
 
-poly!(ax2, Point2f[(0, 0), (0.1, 0), (0.1, current_bars[1]), (0, current_bars[1])], color=colormap1[1], strokecolor=:black, strokewidth=1)
-poly!(ax2, Point2f[(0, current_bars[1]), (0.1, current_bars[1]), (0.1, current_bars[1] + current_bars[2]), (0, current_bars[1] + current_bars[2])], color=colormap1[2], strokecolor=:black, strokewidth=1)
-poly!(ax2, Point2f[(0, current_bars[1] + current_bars[2]), (0.1, current_bars[1] + current_bars[2]), (0.1, 1), (0, 1)], color=colormap1[3], strokecolor=:black, strokewidth=1)
+for i in eachindex(current_boxes)
+    cb = current_boxes[i]
+    fb = future_boxes[i]
+    poly!(ax2, Point2f[(0, cb[1]), (0.1, cb[1]), (0.1, cb[2]), (0, cb[2])], color=colormap1[i], strokecolor=:black, strokewidth=1)
+    poly!(ax2, Point2f[(0.9, fb[1]), (1.0,fb[1]), (1.0, fb[2]), (0.9, fb[2])], color=colormap2[i], strokecolor=:black, strokewidth=1)
+end
 
-poly!(ax2, Point2f[(1, 0), (0.9, 0), (0.9, future_bars[1]), (1, future_bars[1])], color=colormap2[1], strokecolor=:black, strokewidth=1)
-poly!(ax2, Point2f[(1, future_bars[1]), (0.9, future_bars[1]), (0.9, future_bars[1] + future_bars[2]), (1, future_bars[1] + future_bars[2])], color=colormap2[2], strokecolor=:black, strokewidth=1)
-poly!(ax2, Point2f[(1, future_bars[1] + future_bars[2]), (0.9, future_bars[1] + future_bars[2]), (0.9, 1), (1, 1)], color=colormap2[3], strokecolor=:black, strokewidth=1)
+for (i, l) in enumerate(["Asbent", "Unsure", "Present"])
+    text!(ax2, [(-0.1, mean(current_boxes[i]))], text = l, rotation=π/2, align=(:center, :top))
+    text!(ax2, [(1.1, mean(future_boxes[i]))], text = l, rotation=π/2, align=(:center, :bottom))
+end
+
+hidespines!(ax1)
+hidedecorations!(ax1)
+hidespines!(ax2)
+hidedecorations!(ax2)
+
 f

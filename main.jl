@@ -99,7 +99,7 @@ cell_surface = cellarea(current_range)
 cmodel = deepcopy(sdm)
 
 # Sensitivity analysis for the miscoverage rate
-risk_levels = repeat(LinRange(0.7, 0.99, 15); inner=5)
+risk_levels = repeat(LinRange(0.7, 0.99, 8); inner=3)
 qs = [conformal(cmodel, holdout(cmodel)...; α=1.0-risk) for risk in risk_levels]
 
 function _agr(rl, qs)
