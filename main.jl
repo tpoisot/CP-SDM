@@ -231,3 +231,6 @@ future_shift.y = current_shift.y
 
 # Final plots for the novelty analysis
 renderfigure("covariateshift")
+
+# Supp mat with inflated partial response
+renderfigure("partialresponses")

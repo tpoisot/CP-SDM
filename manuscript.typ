@@ -123,7 +123,7 @@ The number of pseudo-absences was arbitrarily set to two times the number of pre
 
 The model was trained, validated, and applied on the 19 WorldClim2 BIOCLIM variables #cite(<Fick2017>), at a spatial resolution of 2.5 minutes of arc. Preliminary analyses using 0.5, 2.5, 5, and 10 minutes of arc show that the qualitative results presented hold. For the projection of the model under climate change, I only report the future data under the SSP370 scenario ("business as usual"), for #change[six GCMS: MRI_ESM2_0, ACCESS_CM2, EC_Earth3_Veg, CanESM5, GFDL_ESM4, and MIROC6.  The climatic data were retrieved for the 2081-2100 period]. #add[The prediction for a score under future climates is measured as the median of the predicted values for each of the GCMs, and the prediction of whether this point in within the future range of the species is done by applying majority voting to the six predictions.]
 
-The climatic novelty of the baseline _v._ future data is estimated through the Euclidean distance #cite(<Fitzpatrick2018>), specifically by assigning as a novelty score for each pixel in the future the distance to its closest baseline analogue. This novelty is measured on de-meaned predictors with unit variance #add[to ensure that predictors with different scales can be adequately compared. Following TK Williams et al 2007 PNAS, novelty is calculated twice: once by using historical climate at the baseline, to measure the emergence of novel climates, and once by using historical climate as the target, to measure the loss of existing climates.]
+The climatic novelty of the baseline _v._ future data is estimated through the Euclidean distance #cite(<Fitzpatrick2018>), specifically by assigning as a novelty score for each pixel in the future the distance to its closest baseline analogue. This novelty is measured on de-meaned predictors with unit variance #add[to ensure that predictors with different scales can be adequately compared. Following TK Williams et al 2007 PNAS, novelty is calculated twice: once by using historical climate at the baseline, to measure the emergence of novel climates, and once by using historical climate as the target, to measure the loss of existing climates.] #add[compare to training data to measure covariate shift, not environmental novelty at the landscape scale]
 
 == Species distribution model
 
@@ -297,7 +297,7 @@ We find that, for the most important variable (_i.e._ the one with the largest $
 In a recent contribution, #cite(<Smith2025>, form: "prose") suggest that because of issues around the use of thresholds, projections of SDMs under climate change scenarios may benefit from a more continuous perspective. In this section, I present a comparison of the conformal prediction of the range under a climate change scenario (SSP370. 2081-2100), to illustrate how the future conformal range can convey information about the certainty of some types of range shift. These results are presented in #ref(<gainloss>).
 
 #figure(
-  image("figures/gainloss.png", width: 100%),
+  image("figures/transitions.png", width: 100%),
   caption: [Overview of the conformal prediction of the range for the future climate data, equivalent to #ref(<predictions>, supplement: "fig.")A (panel A). Spatial distribution of areas where loss and gain are expected to be possible _v._ certain, as explained in main text (B).],
   placement: auto
 ) <gainloss>
@@ -326,7 +326,7 @@ BUT - similar issue plagues all transfer of SDMs in future climate projections, 
 This task is particularly crucial given that entirely novel climatic conditions are likely to become the norm #cite(<Mahony2017>), which in turn will drive the emergence of a novel biosphere globally #cite(<Kerr2025-sg>) #cite(<Ordonez2024>). In this section, I compare the results of conformation prediction to measures of climatic novelty, by partitioning the climate novelty according to the type of range shifts from #ref(<gainloss>, supplement: "fig.")B. The study area shows higher novelty in parts of the range that are currently predicted to be habitable by the species; nevertheless, this does not translate to an association between types of prediction transition and the distribution of novelty within the regions undergoing this transition. In other words, the projected uncertainty under conformal prediction contributes different information when compared to measures of climatic novelty; specifically, it conveys the uncertainty tied to the model itself.
 
 #figure(
-  image("figures/novelty.png", width: 100%),
+  image("figures/covariateshift.png", width: 100%),
   caption: [Climate novelty measured as Euclidean distance to the closest contemporary analogue (A); note that the scale is square-root transformed, as most areas show low novelty. Distribution of novelty values split by the expected transition in occupancy (B); colors are as in #ref(<gainloss>, supplement: "fig.")B.],
   placement: auto
 ) <novelty>
@@ -369,3 +369,9 @@ CP contributes to dispel what #cite(<Messeri2024>, form: "prose") called the "il
 #set figure(numbering: n => [S#n])
 #counter(figure.where(kind: image)).update(0)
 #counter(figure.where(kind: table)).update(0)
+
+#figure(
+  image("figures/partialresponses.png", width: 100%),
+  caption: [Effect of changing the value of the BIO10 variable, on the prediction, as measured by inflated partial responses TK ref. The partial responses have been measured on a random sample of a 1000 draws, and for each draw, the prediction has been classified with the conformal predictor at a risk level $alpha = 0.05$. The proportion of each outcomes for the classification is presented as a function of the variable value. This analysis illustrates how conformal prediction can be used to identify range of predictor variables that are most likely to be associated to uncertain predictions.],
+  placement: auto
+) <partialresponses>
