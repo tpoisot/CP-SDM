@@ -223,17 +223,14 @@ end
 
 renderfigure("transitions")
 
-ft_sure_presence = fCp .& (.!fCa)
-ft_sure_absence = fCa .& (.!fCp)
-ft_unsure = fCa .& fCp
-ft_unsure_in = ft_unsure .& projected_range
-ft_unsure_out = ft_unsure .& (.!projected_range)
-
-renderfigure("gainloss")
+# ft_sure_presence = fCp .& (.!fCa)
+# ft_sure_absence = fCa .& (.!fCp)
+# ft_unsure = fCa .& fCp
+# ft_unsure_in = ft_unsure .& projected_range
+# ft_unsure_out = ft_unsure .& (.!projected_range)
 
 # We read the novelty files instead of running them every time we generate the figures
 novel_climates, lost_climates = SimpleSDMLayers._read_geotiff("artifacts/novely.tif"; bandnumber=i) for i in 1:2]
 
 # Final plots for the novelty analysis
-renderfigure("novelty")
 renderfigure("covariateshift")

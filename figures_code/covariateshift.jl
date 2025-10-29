@@ -55,56 +55,56 @@ for i in axes(colormatrix, 1)
 end
 
 annotation!(ax_leg, 1.1, 1.1, 0, sqrt(2),
-    text = "Novel climates\nemerge",
+    text = "Future data not\nin training set",
     path = Ann.Paths.Corner(),
     style = Ann.Styles.LineArrow(),
     labelspace = :data
 )
 
 annotation!(ax_leg, 1.1, 1.1, sqrt(2), 0,
-    text = "Novel climates\nemerge",
+    text = "Future data not\nin training set",
     path = Ann.Paths.Corner(),
     style = Ann.Styles.LineArrow(),
     labelspace = :data
 )
 
 annotation!(ax_leg, 1.1, -1.1, sqrt(2), 0,
-    text = "Hist. climates\nremain",
+    text = "Current data\nin training set",
     path = Ann.Paths.Corner(),
     style = Ann.Styles.LineArrow(),
     labelspace = :data
 )
 
 annotation!(ax_leg, 1.1, -1.1, 0, -sqrt(2),
-    text = "Hist. climates\nremain",
+    text = "Current data\nin training set",
     path = Ann.Paths.Corner(),
     style = Ann.Styles.LineArrow(),
     labelspace = :data
 )
 
 annotation!(ax_leg, -1.1, -1.1, 0, -sqrt(2),
-    text = "No novel\nclimates",
+    text = "Future data\nin training set",
     path = Ann.Paths.Corner(),
     style = Ann.Styles.LineArrow(),
     labelspace = :data
 )
 
 annotation!(ax_leg, -1.1, -1.1, -sqrt(2), 0,
-    text = "No novel\nclimates",
+    text = "Future data\nin training set",
     path = Ann.Paths.Corner(),
     style = Ann.Styles.LineArrow(),
     labelspace = :data
 )
 
 annotation!(ax_leg, -1.1, 1.1, 0, sqrt(2),
-    text = "Hist. climates\nare lost",
+    text = "Current data not\nin training set",
     path = Ann.Paths.Corner(),
     style = Ann.Styles.LineArrow(),
     labelspace = :data
 )
 
 annotation!(ax_leg, -1.1, 1.1, -sqrt(2), 0,
-    text = "Hist. climates\nare lost",
+    text = "Current data not\nin training set",
     path = Ann.Paths.Corner(),
     style = Ann.Styles.LineArrow(),
     labelspace = :data
