@@ -22,24 +22,25 @@ colormap2 = _palette(; low=low, high=h2, breaks=nbreaks)
 colormatrix = [ColorBlendModes.blend.(c1, c2; mode=BlendMultiply) for c1 in colormap1, c2 in colormap2]
 
 # Discrete maps
-m1 = discretize(novel_climates, nbreaks)
-m2 = discretize(lost_climates, nbreaks)
+m1 = discretize(current_shift, nbreaks)
+m2 = discretize(future_shift, nbreaks)
 category = similar(m1)
 for i in eachindex(category)
     category[i] = LinearIndices(colormatrix)[m1[i], m2[i]]
 end
 
 f = Figure(; size=(1200, 600))
-ax = Axis(f[1:5, 1:2]; aspect=DataAspect())
+ax = Axis(f[1:2, 1]; aspect=DataAspect())
 heatmap!(ax, category, colormap=vec(colormatrix))
 lines!(ax, landmass, color=:black)
 
-ax_leg = Axis(f[4:5, 3:4]; aspect=DataAspect())
+ax_leg = Axis(f[2, 2]; aspect=DataAspect())
+xlims!(ax_leg, -2.2, 2.2)
 
-xp = LinRange(-1, 1, size(colormatrix, 1)+1)
-yp = LinRange(-1, 1, size(colormatrix, 2)+1)
+xp = LinRange(-1, 1, size(colormatrix, 1) + 1)
+yp = LinRange(-1, 1, size(colormatrix, 2) + 1)
 
-θ = π / 4
+θ = -π / 4
 for i in axes(colormatrix, 1)
     xc = (xp[i], xp[i+1]) .+ (0.015, -0.015)
     for j in axes(colormatrix, 2)
@@ -49,95 +50,82 @@ for i in axes(colormatrix, 1)
             (c[1] * cos(θ) - c[2] * sin(θ), c[2] * cos(θ) + c[1] * sin(θ))
             for c in corners
         ]
-        #scatter!(ax_leg, [xr], [yr], color=colormatrix[i,j])
-        poly!(ax_leg, r_corners, color=colormatrix[i,j], strokecolor=:black, strokewidth=0.5)
+        poly!(ax_leg, r_corners, color=colormatrix[i, j], strokecolor=:black, strokewidth=0.5)
     end
 end
 
-annotation!(ax_leg, 1.1, 1.1, 0, sqrt(2),
-    text = "Future data not\nin training set",
-    path = Ann.Paths.Corner(),
-    style = Ann.Styles.LineArrow(),
-    labelspace = :data
-)
+function makelab!(ax, start, end1, end2, label; path=Ann.Paths.Corner(), style=Ann.Styles.LineArrow(), labelspace=:data, kwargs...)
+    sx = (start[1] * cos(θ) - start[2] * sin(θ), start[2] * cos(θ) + start[1] * sin(θ))
+    e1x = (end1[1] * cos(θ) - end1[2] * sin(θ), end1[2] * cos(θ) + end1[1] * sin(θ))
+    e2x = (end2[1] * cos(θ) - end2[2] * sin(θ), end2[2] * cos(θ) + end2[1] * sin(θ))
+    annotation!(ax, sx..., e1x...;
+        text=label,
+        path=path,
+        style=style,
+        labelspace=labelspace,
+        kwargs...
+    )
+    annotation!(ax, sx..., e2x...;
+        text=label,
+        path=path,
+        style=style,
+        labelspace=labelspace,
+        kwargs...
+    )
+end
 
-annotation!(ax_leg, 1.1, 1.1, sqrt(2), 0,
-    text = "Future data not\nin training set",
-    path = Ann.Paths.Corner(),
-    style = Ann.Styles.LineArrow(),
-    labelspace = :data
-)
-
-annotation!(ax_leg, 1.1, -1.1, sqrt(2), 0,
-    text = "Current data\nin training set",
-    path = Ann.Paths.Corner(),
-    style = Ann.Styles.LineArrow(),
-    labelspace = :data
-)
-
-annotation!(ax_leg, 1.1, -1.1, 0, -sqrt(2),
-    text = "Current data\nin training set",
-    path = Ann.Paths.Corner(),
-    style = Ann.Styles.LineArrow(),
-    labelspace = :data
-)
-
-annotation!(ax_leg, -1.1, -1.1, 0, -sqrt(2),
-    text = "Future data\nin training set",
-    path = Ann.Paths.Corner(),
-    style = Ann.Styles.LineArrow(),
-    labelspace = :data
-)
-
-annotation!(ax_leg, -1.1, -1.1, -sqrt(2), 0,
-    text = "Future data\nin training set",
-    path = Ann.Paths.Corner(),
-    style = Ann.Styles.LineArrow(),
-    labelspace = :data
-)
-
-annotation!(ax_leg, -1.1, 1.1, 0, sqrt(2),
-    text = "Current data not\nin training set",
-    path = Ann.Paths.Corner(),
-    style = Ann.Styles.LineArrow(),
-    labelspace = :data
-)
-
-annotation!(ax_leg, -1.1, 1.1, -sqrt(2), 0,
-    text = "Current data not\nin training set",
-    path = Ann.Paths.Corner(),
-    style = Ann.Styles.LineArrow(),
-    labelspace = :data
-)
+makelab!(ax_leg, (0, 1.5), (1, 1), (-1, 1), "Future conditions\nless represented")
+makelab!(ax_leg, (1.5, 0), (1, 1), (1, -1), "Current conditions\nless represented")
+makelab!(ax_leg, (-1.5, 0), (-1, -1), (-1, 1), "Current conditions\nwell represented")
+makelab!(ax_leg, (0, -1.5), (-1, -1), (1, -1), "Future conditions\nwell represented")
 
 f
 
-ax_unc = Axis(f[1:3, 3:4])
+xlabs = ([1, 2, 3, 4], ["Uncertain\n\t→ Absent", "Uncertain\n\t→ Uncertain", "Present\n\t→ Uncertain", "Present\n\t→ Present"])
+ax_unc = Axis(f[1, 2], xticks = xlabs)
 
 categories = Int64[]
 values = Float64[]
 dodge = Int64[]
 
-
-
-u_u = nodata((current_uncertainty.==1) .* (future_uncertainty.==1), false)
-u_a = nodata((current_uncertainty.==1) .* (future_uncertainty.==0), false)
-p_u = nodata((current_uncertainty.==2) .* (future_uncertainty.==1), false)
-p_p = nodata((current_uncertainty.==2) .* (future_uncertainty.==2), false)
+u_u = nodata((current_uncertainty .== 1) .* (future_uncertainty .== 1), false)
+u_a = nodata((current_uncertainty .== 1) .* (future_uncertainty .== 0), false)
+p_u = nodata((current_uncertainty .== 2) .* (future_uncertainty .== 1), false)
+p_p = nodata((current_uncertainty .== 2) .* (future_uncertainty .== 2), false)
 
 for (i, l) in enumerate([u_a, u_u, p_u, p_p])
+    future_shift.x = l.x
+    future_shift.y = l.y
+    current_shift.x = l.x
+    current_shift.y = l.y
     append!(categories, fill(i, 2length(l)))
-    append!(values, mask(lost_climates, l))
-    append!(values, mask(novel_climates, l))
+    append!(values, mask(future_shift, l))
+    append!(values, mask(current_shift, l))
     append!(dodge, fill(1, length(l)))
     append!(dodge, fill(2, length(l)))
 end
 
-boxplot!(ax_unc, categories, values, dodge = dodge, show_notch = false, color = map(d->d==1 ? h2 : h1, dodge))
+
+
+boxplot!(ax_unc,
+    categories,
+    values,
+    dodge=dodge,
+    show_notch=false,
+    color=:white,#map(d -> d == 1 ? (h1, 0.1) : (h2, 0.1), dodge),
+    strokecolor=[h1, h2, h1, h2, h1, h2, h1, h2],
+    mediancolor=[h1, h2, h1, h2, h1, h2, h1, h2],
+    strokewidth=2,
+    medianlinewidth=4, 
+    gap=0.4,
+    show_outliers=false,
+)
 
 hidespines!(ax_leg)
 hidedecorations!(ax_leg)
 hidespines!(ax)
 hidedecorations!(ax)
+
+hidespines!(ax_unc)
 
 f
