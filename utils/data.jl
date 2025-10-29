@@ -1,6 +1,8 @@
 using SpeciesDistributionToolkit
 const SDT = SpeciesDistributionToolkit
+using CairoMakie
 import Random
+import Dates
 Random.seed!(42069)
 
 # Load the data from the occurrences interface package - this is the entire
@@ -70,7 +72,7 @@ SDeMo.writesdm("artifacts/sdm.json", sdm)
 SimpleSDMLayers.save("artifacts/historical.tif", L)
 
 # Future layers
-GCMs = [MRI_ESM2_0, ACCESS_CM2]#, EC_Earth3_Veg, CanESM5, GFDL_ESM4, MIROC6]
+GCMs = [MRI_ESM2_0, ACCESS_CM2, EC_Earth3_Veg, CanESM5, GFDL_ESM4, MIROC6]
 
 for gcm in GCMs
     prj = Projection(SSP370, gcm)
@@ -88,4 +90,3 @@ for gcm in GCMs
 
     SimpleSDMLayers.save("artifacts/future-SSP370-$(gcm).tif", tf)
 end
-
