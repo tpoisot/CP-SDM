@@ -1,4 +1,4 @@
-idx = findfirst(==(13), variables(sdm))
+idx = findfirst(==(3), variables(sdm))
 
 xy = [partialresponse(sdm, variables(sdm)[idx]; inflated=true, threshold=false) for i in 1:1000]
 partialscores = hcat(last.(xy)...)
