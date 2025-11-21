@@ -7,7 +7,7 @@ import PrettyTables
 import Random
 using ColorBlendModes
 using ColorSchemes
-Random.seed!(42069)
+Random.seed!(123456)
 
 # Paths to store outputs
 fpath = joinpath(@__DIR__, "figures")
@@ -99,7 +99,7 @@ cell_surface = cellarea(current_range)
 cmodel = deepcopy(sdm)
 
 # Sensitivity analysis for the miscoverage rate
-risk_levels = repeat(LinRange(0.7, 0.99, 40); inner=10)
+risk_levels = repeat(LinRange(0.7, 0.99, 50); inner=15)
 qs = [conformal(cmodel, holdout(cmodel)...; α=1.0-risk) for risk in risk_levels]
 
 function _agr(rl, qs)

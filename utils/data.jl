@@ -4,7 +4,7 @@ using CairoMakie
 import Random
 using Statistics
 import Dates
-Random.seed!(42069)
+Random.seed!(132645)
 
 # Load the data from the occurrences interface package - this is the entire
 # dataset, but we don't particularly need to clip it at this point
@@ -38,7 +38,7 @@ presencelayer = mask(M, records)
 distance = pseudoabsencemask(DistanceToEvent, presencelayer)
 presencelayer = trim(mask!(presencelayer, landmass))
 distance = trim(mask!(distance, landmass))
-background = nodata(distance, d -> !(25 <= d <= 220))
+background = nodata(distance, d -> !(45 <= d <= 220)).>0.0
 absencelayer = backgroundpoints(background, 3sum(presencelayer))
 
 # Test
@@ -55,7 +55,7 @@ L = trim.(mask!(L, landmass))
 # At this point, we can run the SDM
 
 # Set up the model - logistic regression with Z-score before
-sdm = SDM(ZScore, Logistic, L, presencelayer, absencelayer)
+sdm = SDM(PCATransform, Logistic, L, presencelayer, absencelayer)
 hyperparameters!(classifier(sdm), :η, 1e-3) # Slow descent
 hyperparameters!(classifier(sdm), :interactions, :all) # All interactions
 hyperparameters!(classifier(sdm), :epochs, 10000) # Longer training
@@ -73,10 +73,10 @@ SDeMo.writesdm("artifacts/sdm.json", sdm)
 SimpleSDMLayers.save("artifacts/historical.tif", L)
 
 # Future layers
-GCMs = [MRI_ESM2_0, ACCESS_CM2, EC_Earth3_Veg, CanESM5, GFDL_ESM4, MIROC6]
+GCMs = [MRI_ESM2_0, ACCESS_CM2, EC_Earth3_Veg, IPSL_CM6A_LR, CanESM5, MIROC6]
 
 for gcm in GCMs
-    prj = Projection(SSP370, gcm)
+    prj = Projection(SSP245, gcm)
     tf = SDMLayer{Float32}[SDMLayer(provider, prj; resolution=2.5, timespan=Dates.Year(2081) => Dates.Year(2100), layer=l, extent...) for l in layers(provider)]
     
     # Important !!!!
@@ -89,14 +89,14 @@ for gcm in GCMs
         tf[i].y = L[1].y
     end
 
-    SimpleSDMLayers.save("artifacts/future-SSP370-$(gcm).tif", tf)
+    SimpleSDMLayers.save("artifacts/future-SSP245-$(gcm).tif", tf)
 end
 
 # Code for novelty - we take the median value for each pixel here purely to save
 # time, otherwise this is a very long step for very minor differences in the end
 
 include(joinpath(pwd(), "utils/novelty.jl"))
-future_climates = filter(contains("future"), readdir("artifacts/"; join=true))
+future_climates = filter(contains("future-SSP245"), readdir("artifacts/"; join=true))
 
 F = [
     [SimpleSDMLayers._read_geotiff(future_file; bandnumber=i) for i in 1:19] for future_file in future_climates
