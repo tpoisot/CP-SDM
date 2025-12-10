@@ -43,7 +43,7 @@ Even though conformal prediction is yet scarcely used for SDMs (but see e.g. thi
 
 Davis, A. J., Groom, Q., ... & Strubbe, D. (2024). Reproducible WiSDM: a workflow for reproducible invasive alien species risk maps under climate change scenarios using standardized open data. Frontiers in Ecology and Evolution, 12, 1148895.
 
-#response[*TODO CITE*]
+#response[It has been cited in the discussion. *TODO*]
 
 What do CP predicted sets mean under climatic novelty? If my understanding is correct, exchangeability, i.e. the main assumption of CP, is violated when we predict under shifted covariates compared to training conditions. It means that CP loose its desired marginal coverage guarantee for predictions under future climate scenarios, so this method shouldn't be used or interpreted in this context.
 
