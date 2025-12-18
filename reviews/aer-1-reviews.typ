@@ -70,7 +70,7 @@ A variety of score functions are used, even for binary classification, so I thin
 
 Various abuse of terms, including "species" (Is it?), "presence", "absence" -> This is misleading as you work with PO with many "false absences". This leads to the even more misleading term "sure absence" when it comes to CP credible sets
 
-#response[The reviewer seems to disagree with the choice of study system and nomenclature. I take note of this disagreement, and think it is unfrotunate, but as I have laid out my arguments about why these are immaterial to the description of the method, I have made no further changes to the manuscript.]
+#response[The reviewer seems to disagree with the choice of study system and nomenclature. I take note of this disagreement, and think it is unfortunate, but as I have laid out my arguments about why these are not affecting the description of the method, I have made no further changes to the manuscript.]
 
 I demand a consistent change of terms, as for instance "presence" should rather be "observation" and "absence" should be "non observation".
 
@@ -110,13 +110,15 @@ Besides, ensemble based uncertainty doesn't account for model bias/misspecificat
 
 54: "is not a measure of variability coming through the distribution of data" -> I don't understand this statement, could you developp? In my understanding, conformal sets implicitely capture the probabilistic distribution of the data conditionally to predictors, which is needed to guarantee coverage. This is in line with your next sentence, so I guess it's just a misleading formulation.
 
-#response[]
+#response[This sentence has been rephrased.]
 
 === Methods
 
 84: No reference for this method to generate pseudo-absences. I understand the simple logic, but it doesn't account for undervisited areas which are equally selected as very visited ones for a given distance to presence observation (among other sampling biases). Classical Pseudo-Absence generation methods could be used (see e.g. Wisz, M. S., & Guisan, A. (2009). Do pseudo-absence selection strategies influence species distribution models and their predictions?)
 
-#response[The specific recommendations of Wisz & Guisan do not apply in a machine learning context, where a class imbalance of $10^4$ negative samples for $130$ positive samples (what they use in their article) would result in the type of severe imbalance which requires remediation through for example under-sampling, which would complexify the pseudo-absence generation with zero benefit for the actual point of the manuscript. This being said, because the revised version discusses class imbalance in the context of CP in more depth, the class imbalance of the dataset has been increased slightly (from 1:3 to 1:5). I have added additional information about the pseudo-absence generation.
+#response[The specific recommendations of Wisz & Guisan do not apply in a machine learning context, where a class imbalance of $10^4$ negative samples for $130$ positive samples (what they use in their article) would result in the type of severe imbalance which requires remediation through, for example, under-sampling, which would complexify the pseudo-absence generation with zero benefit for the actual point of the manuscript.
+
+This being said, because the revised version discusses class imbalance in the context of CP in more depth, the class imbalance of the dataset has been increased slightly (from 1:3 to 1:5). I have added additional information about the pseudo-absence generation, as well a recent reference that supports the use of a similar approach.
 
 The reviewer is similarly correct about the selection bias, but this is _well_ beyond the scope of this manuscript, so the pseudo-absence generation has been kept as is.]
 
@@ -134,7 +136,7 @@ To avoid this kind of discussion, i would suggest to use a presence-absence data
 
 117-118: Why?
 
-#response[For illustration purposes. The manuscript is already very substantial, and a full investigation of multiple climate scenarios would not contribute to the main message, which is about CP.]
+#response[This has been changed in the revision.]
 
 119: "v." -> "vs"?
 
@@ -162,7 +164,7 @@ and stick to this terminology for all along
 
 258-231: Does it happen that the predicted set is empty? Would you then interpret it differently as the set with both outcomes {0,1}?
 
-#response[This is described in depth in a later section (more specifically, in the very next sentence).]
+#response[This is described in depth immediately after the excerpt mentionned by the reviewer. No changes made.]
 
 234-247: There appears to be several errors around the definition of the conformity score l.234/235. Where does this score comes from? Why predicted probabilities are put in the exponential?
 
@@ -170,7 +172,7 @@ and stick to this terminology for all along
 
 For a site i, the classic softmax score would simply be p_{-}^i when the ground truth (true label) is absence, or p_{+}^i when it's presence, i.e. the score for site i is: s^i = p_{+}^i 1_{Y_i=1} + p_{-}^i 1_{Y_i=0}
 
-#response[The reviewer is factually incorrect. The softmax function is:
+#response[The reviewer is incorrect. The softmax function is:
 
 $
 sigma(bold(x))_i = "exp"(x_i)/(sum_j "exp"(x_j))  
@@ -186,7 +188,7 @@ You don't mention that, in calibration, the true label determines which probabil
 
 Furthermore, You don't mention that there exist different commonly used score functions, even in this simple case of binary classification, which are alternatives to the softmax that you intend to use, e.g. the Adaptive Prediction Sets (APS) score, see: Angelopoulos, A. N., & Bates, S. (2023). Conformal prediction: A gentle introduction. Foundations and Trends® in Machine Learning, 16(4), 494-591.
 
-#response[More than a different score function, APS is a different way to handle the scores of all classes (but in the reference that the reviewer cites, softmax is still used to generate these scores). I have added a clarification about APS, as well as additional clarifications and mentions of CP techniques. Note that the manuscript already discussed full, split, inductive, and cross-conformal approaches.]
+#response[More than a different score function, APS is a different way to handle the scores of all classes (but in the reference that the reviewer cites, softmax may still be used to generate these scores). I have added a clarification about APS, as well as additional clarifications and mentions of CP techniques. Note that the manuscript already discussed full, split, inductive, and cross-conformal approaches.]
 
 263-266: But if the empty set is predicted quite often, it's possible to have an inefficiency of 1 and yet to have predictions with both outcomes, right?
 
@@ -212,23 +214,23 @@ Table 1: what means NPV and PPV?
 
 387-389: "Uncertainty in the conformal classifier is coming from comparing the prediction to all other predictions under an estimation of the distributions for the conditions leading to the prediction of the presence (or absence) outcome" -> Sentence too abstract and not clear to me, and the next sentence doesn't make it more concrete.
 
-#response[No change made.]
+#response[Re-phrased.]
 
 = Reviewer 2
 
 Disclaimer: although an ecological modeller by training and doing mostly statistical modelling, I am not doing active research on SDMs (except those that separate detection from presence, i.e., not the ones considered in the submitted manuscript). I was previously to my reading of the manuscript unfamiliar with conformal prediction. My review should therefore be taken as that of somebody reasonably familiar with ecological statistics at large, but not that of a specialist in either classical species distribution modelling or machine learning. 
 
-#response[]
+#response[I thank the reviewer for their positive and constructive comments.]
 
 == General overview
 
 The manuscript introduces how conformal prediction, a machine learning technique well-grounded in statistical theory, can help make predictions of SDMs that better incorporate uncertainty. It is illustrated with a (somewhat humorous) empirical example, including under novel climate conditions. Better communicating the uncertainty of SDM predictions is a major endeavour for ecological modelling and this manuscript will greatly help advancing in that direction. 
 
-#response[]
+#response[Thank you.]
 
 The manuscript is pedagogical and very well written. Most SDM modelling choices have sounded very standard or well-justified to me, and I only have minor comments. I was able to get most of the theory by reading together the present manuscript together with a bit of Angelopoulos & Bates 2023, I suggest to put the arXiv link to this publication in the bibliography list to help readers. 
 
-#response[]
+#response[The bibliography will be formatted for the final submission of the manuscript - thank you for catching this omission.]
 
 == Line-by-line comments
 
@@ -250,15 +252,15 @@ l. 232 isn’t this robustness only true for split CP? Or is it more general?
 
 l. 243 Why uppercase S? (as opposed to lowercase)
 
-#response[I used $cal(S)$ to note the distribution of the scores, from which the critical value for the inclusion of a class is derived. This has now been clarified in the text, and this notation is now re-used in a few additional places when introducing variants of conformal prediction.]
+#response[I used $cal(S)$ to note the distribution of the scores, from which the critical value for the inclusion of a class is derived. This has now been clarified in the text, and this notation is now re-used in a few additional places when introducing variants of conformal prediction, like Mondrian CP.]
 
 Figure 3C I wasn’t sure if it was defined for alpha=0.05 or a variable alpha level
 
-#response[]
+#response[This was indeed for $alpha = 0.05$, this has been clarified in the figure caption.]
 
 l. 369-391 Perhaps related to the above, I found this section more difficult to grasp.
 
-#response[]
+#response[I have added some short parentheticals to clarify this section, and added a recent references to support the idea that different type of errors maye be handled differently.]
 
 l. 394 bu the SDM→ by the SDM
 
@@ -266,15 +268,15 @@ l. 394 bu the SDM→ by the SDM
 
 l. 451 Regarding BIO15, perhaps link to a table of results since these is not presented here (possible to do that in a supplementary or code/data repository?)
 
-#response[]
+#response[After changing the pseudo-absence generation and the data spatial resolution, the variable with the most importance for uncertain areas is BIO3. This has been reflected in the text, and there is now a supplementary figure that shows which values of BIO3 specifically are associated with higher uncertainty.]
 
 l. 463 Isn’t it fig 3A as fig 2A does not incorporate uncertainty?
 
-#response[]
+#response[This section has veen changed and the figures references updated.]
 
 l. 469 Figure 6 legend. Does the author mean equivalent to Figure 3A (rather than 2A)?
 
-#response[]
+#response[This section has veen changed and the figures references updated.]
 
 l. 504-505 It is indeed very true that CP is directly comparable to classical SDM prediction. Perhaps it would be useful to illustrate this with some numbers (or another figure). 
 
@@ -282,7 +284,7 @@ l. 504-505 It is indeed very true that CP is directly comparable to classical SD
 
 Fig. 6 shows how the CP approach allows to disentangle predictions by levels of uncertainty – which is really great (nicely done). As I understand it, Fig 6B is built through matching Fig 6A to Fig 3A. In my opinion, it would also be interesting to compare Fig 6B to its equivalent built through matching Fig 2A to a future climate variant (naïve climate projection approach). How wrong can the naïve approach be, compared to an approach that incorporates uncertainty?
 
-#response[This comment has partially been handled through the revised (and considerably expanded) section of future climates, which now includes a discussion of covariate shift.]
+#response[This comment has partially been handled through the revised (and considerably expanded) section on future climates, which now includes a discussion of covariate shift.]
 
 l. 563 Specifics of that Elith 2019 ref are missing. 
 
