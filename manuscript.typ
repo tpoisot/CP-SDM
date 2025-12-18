@@ -68,6 +68,11 @@
 #let add(body) = text(fill: rgb(0, 100, 0))[#body]
 #let change(body) = text(fill: rgb(0, 100, 100))[#underline(body, stroke: rgb(0, 90, 90))]
 #let cut(body) = text(fill: rgb(150, 150, 150))[#strike(body, stroke: rgb(100, 0, 0))]
+
+// #let add(body) = text()[#body]
+// #let change(body) = text()[#body]
+// #let cut(body) = []
+
 #show "TK": text(weight: "bold", fill: rgb("#e08619"))[TK]
 
 *Abstract*: Providing accurate estimates of uncertainty is key for the analysis, adoption, and interpretation of species distribution models. In this manuscript, through the analysis of data from an emblematic North American cryptid, I illustrate how Conformal Prediction allows fast and informative uncertainty quantification. I discuss how the conformal predictions can be used to gain more knowledge about the importance of variables in driving presences and absences, and how they help assess the importance of climatic novelty when projecting the models under future climate change scenarios.
@@ -175,7 +180,7 @@ The conformal score associated to a prediction is $1 - s_dot$, where $dot$ is th
 
 The next step is to identify a critical value $accent(q, hat)$ above which a conformal score indicates that the prediction it describes is credible. This critical value is picked by examining the empirical quantile distribution of the conformal scores #add[in the distribution $cal(S)$] calculated over $n$ training examples, and an acceptable level of risk $alpha$ (explained in depth in the next sub-section). #change[Specifically, this is done by identifying the $q_i$-th quantile], where 
 
-#add[for the true class + quantiles of what]
+#add[TK for the true class + quantiles of what]
 
 $
   q_i = ceil((n+1)(1-alpha))/n 
