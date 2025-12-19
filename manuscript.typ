@@ -1,5 +1,6 @@
 #set text(font: "Libertinus Serif", size: 12pt)
-#show math.equation: set text(font: "Libertinus Math")
+#show raw: set text(font: "Libertinus Sans")
+#set par(spacing: 3em, justify: false)
 #set page(paper: "us-letter", margin: 1in)
 
 #set table.hline(stroke: .6pt)
@@ -24,7 +25,7 @@
   #v(2em)
   #set text(13pt, weight: "bold", font: "Libertinus Sans")
   #smallcaps(it.body)
-  #v(1.8em)
+  #v(2em)
 ]
 
 #show heading.where(
@@ -33,20 +34,12 @@
   #v(1.5em)
   #set text(12pt, weight: "regular", font: "Libertinus Sans")
   #smallcaps(it.body)
-  #v(1.8em)
-]
-
-#show heading.where(
-  level: 3,
-): it => block(width: 100%)[
-  #v(1em)
-  #set text(12pt, style: "italic", font: "Libertinus Sans")
-  #it.body
-  #v(1.5em)
+  #v(1.0em)
 ]
 
 #let titlepage(data) = block[
-  // #place(bottom + right, dy: 50pt, dx: 70pt, image("logo.png", width: 18%))
+  #place(bottom + right, dy: 50pt, dx: 70pt, image("logo.png", height: 30pt))
+  #place(bottom + right, dy: 46pt, dx: 35pt, text(size: 7pt, luma(20%), font: "Libertinus Sans")[Laboratoire d'Écologie Prédictive\ et Interprétable pour la Crise de la Biodiversité\ _epic-biodiversity.org_])
   #v(2fr)
   #set par(spacing: 1em, leading: 0.3em, justify: false)
   #text(data.title, size: 30pt, font: "Libertinus Sans", weight: "regular")
@@ -55,6 +48,10 @@
     text(author.name, font: "Libertinus Sans")
     linebreak()
     text(author.institution)
+    if "email" in author {
+      linebreak()
+      raw(author.email)
+    }
     linebreak()
     linebreak()
   }
@@ -64,23 +61,50 @@
 #titlepage(json("metadata.json"))
 #pagebreak()
 
+
+#set page(header: [
+  #set text(font: "Libertinus Sans", size: 10pt, rgb("#333"))
+  Poisot
+  #h(1fr)
+  Conformal prediction of species distributions
+])
+#set page(footer: context [
+  #set text(font: "Libertinus Sans", size: 10pt, rgb("#333"))
+  Last update: #datetime.today().display()
+  #h(1fr)
+  Page
+  #counter(page).display(
+    "1 of 1",
+    both: true,
+  )
+])
+
 // Editing marks
 #let add(body) = text(fill: rgb(0, 100, 0))[#body]
 #let change(body) = text(fill: rgb(0, 100, 100))[#underline(body, stroke: rgb(0, 90, 90))]
 #let cut(body) = text(fill: rgb(150, 150, 150))[#strike(body, stroke: rgb(100, 0, 0))]
 
-// #let add(body) = text()[#body]
-// #let change(body) = text()[#body]
-// #let cut(body) = []
+#let add(body) = text()[#body]
+#let change(body) = text()[#body]
+#let cut(body) = []
 
 #show "TK": text(weight: "bold", fill: rgb("#e08619"))[TK]
 
+#v(1fr)
+
 *Abstract*: Providing accurate estimates of uncertainty is key for the analysis, adoption, and interpretation of species distribution models. In this manuscript, through the analysis of data from an emblematic North American cryptid, I illustrate how Conformal Prediction allows fast and informative uncertainty quantification. I discuss how the conformal predictions can be used to gain more knowledge about the importance of variables in driving presences and absences, and how they help assess the importance of climatic novelty when projecting the models under future climate change scenarios.
+
+#v(0.2fr)
+
+*Keywords*: conformal prediction, species distribution models, uncertainty quantification, climatic novelty, climate change
+
+
+#v(1fr)
 
 #pagebreak()
 
 #set page(numbering: "1 of 1")
-#set par(leading: 1.8em, spacing: 2.5em, justify: false)
+#set par(leading: 1.8em, spacing: 2.5em, justify: true)
 #set par.line(numbering: n => text(size: 10pt, font: "Libertinus Sans", luma(60%))[#n])
 #set math.equation(numbering: "(1)")
 
@@ -104,12 +128,10 @@ Using occurrence data about an emblematic North American cryptid, I provide a te
 
 === Occurrence data
 
-The occurrence data used in this article are geo-referenced observations of the Sasquatch #cite(<lozier2009predicting>). Although these observations are likely to be mis-categorized American black bears #cite(<foxon2024bigfoot>), they nevertheless share many features of the data that are used to train SDMs: high auto-correlation, uneven sampling effort, and clear association with several bioclimatic variables that is robust enough to train a predictive model. Thavehe recorded locations, as well a background points, are presented in #ref(<occurrences>).
+The occurrence data used in this article are geo-referenced observations of the Sasquatch #cite(<lozier2009predicting>). Although these observations are likely to be mis-categorized American black bears #cite(<foxon2024bigfoot>), they nevertheless share many features of the data that are used to train SDMs: high auto-correlation, uneven sampling effort, and clear association with several bioclimatic variables that is robust enough to train a predictive model. The recorded locations, as well a background points, are presented in #ref(<occurrences>).
 
 #add[
 This dataset lacks associated records of absence. This is a characteristic shared with most applications of species distribution models, and therefore a desirable property to illustrate the use of conformal prediction. Through this article, I will rely on pseudo-absences (described in the next section) to replace true absences. Because they are treated as absences in a machine learning context (and, though never explicitely, also when using methods like MaxEnt), I will refer to observations as "presences", to pseudo-absences as "absences", and the classifier will therefore be described as making a prediction on the species "presence".
-
-TK expand on why this species
 ]
 
 === Pseudo-absences generation
@@ -305,30 +327,26 @@ In a recent contribution, #cite(<smith2025linking>, form: "prose") suggest that 
   placement: auto
 ) <gainloss>
 
-#change[Based on the comparison between the baseline (#ref(<uncertainty>, supplement: "fig.")A) and projected (#ref(<gainloss>, supplement: "fig.")A) ranges, we can establish identify areas where the species range is conserved (${+} -> {+}$), is lost (${+} -> {-}$), becomes uncertain (${+} -> {-,+}$, ${-} -> {-,+}$), or was uncertain but becomes certain (${+,-} -> {-}$, ${-,+} -> {+}$). By mapping these situations, we can identify large areas that are confidently lost towards the Southern edge of the species's range, with very limited areas of either possible or sure gain, strongly suggesting that this species would undergo range contraction. Note that the area corresponding to ambiguous transitions is relatively large, which provides a good understanding of the possible saptial variation (and uncertainty) to be expected under the considered climate change models and scenario.]
+#change[Based on the comparison between the baseline (#ref(<uncertainty>, supplement: "fig.")A) and projected (#ref(<gainloss>, supplement: "fig.")A) ranges, we can establish identify areas where the species range is conserved (${+} -> {+}$), is lost (${+} -> {-}$), becomes uncertain (${+} -> {-,+}$, ${-} -> {-,+}$), or was uncertain but becomes certain (${+,-} -> {-}$, ${-,+} -> {+}$). By mapping these situations, we can identify large areas that are confidently lost towards the Southern edge of the species's range, with very limited areas of either possible or sure gain, strongly suggesting that this species would undergo range contraction. Note that the area corresponding to ambiguous transitions is relatively large, which provides a good understanding of the possible spatial variation (and uncertainty) to be expected under the considered climate change models and scenario.]
 
 #add[
 === Uncertainty and bioclimatic novelty
 
-exchangeability is a core assumption - climate change likely to be a departure
-
-BUT - similar issue plagues all transfer of SDMs in future climate projections, chances of covariate shift usually not handled beyond measuring novelty - therefore assumed that covaraite shift is minimal
-
-#cite(<allen2025insample>) - in-sample calibration is enough to get the guarantees required for conformal prediction
-
-#cite(<balinsky2025when>) - can re-use calibration set, gives ok coverage
-
-#cite(<barber2023conformal>)- methods to deal with it
-
 ]
 
-#cite(<zurell2012predicting>, form: "prose") highlight the importance of fully considering uncertainty when transferring the model to novel climate data: there is a chance that the future climate conditions will not have occurred in the training dataset, and therefore our confidence in the model outcome should be lowered. This covariate shift is well documented to decrease the performance of models #cite(<mesgaran2014here>), and CP offers an opportunity to shine a different light on this phenomenon.
+#cite(<zurell2012predicting>, form: "prose") highlight the importance of fully considering uncertainty when transferring the model to novel climate data: there is a chance that the future climate conditions will not have occurred in the training dataset, and therefore our confidence in the model outcome should be lowered. This covariate shift is well documented to decrease the performance of models #cite(<mesgaran2014here>), and CP offers an opportunity to shine a different light on this phenomenon. #change[Understanding covariate shift in the context of CP] is particularly crucial given that entirely novel climatic conditions are likely to become the norm #cite(<mahony2017closer>), which in turn will drive the emergence of a novel biosphere globally #cite(<kerr2025widespread>) #cite(<ordonez2024novel>).
 
-This task is particularly crucial given that entirely novel climatic conditions are likely to become the norm #cite(<mahony2017closer>), which in turn will drive the emergence of a novel biosphere globally #cite(<kerr2025widespread>) #cite(<ordonez2024novel>). In this section, I compare the results of conformation prediction to measures of climatic novelty, by partitioning the climate novelty according to the type of range shifts from #ref(<gainloss>, supplement: "fig.")B. The study area shows higher novelty in parts of the range that are currently predicted to be habitable by the species; nevertheless, this does not translate to an association between types of prediction transition and the distribution of novelty within the regions undergoing this transition. In other words, the projected uncertainty under conformal prediction contributes different information when compared to measures of climatic novelty; specifically, it conveys the uncertainty tied to the model itself.
+#cut[In this section, I compare the results of conformation prediction to measures of climatic novelty, by partitioning the climate novelty according to the type of range shifts from #ref(<gainloss>, supplement: "fig.")B. The study area shows higher novelty in parts of the range that are currently predicted to be habitable by the species; nevertheless, this does not translate to an association between types of prediction transition and the distribution of novelty within the regions undergoing this transition. In other words, the projected uncertainty under conformal prediction contributes different information when compared to measures of climatic novelty; specifically, it conveys the uncertainty tied to the model itself.]
+
+#add[
+Yet although novelty is expected to emerge through climate change, it also emerges for current climate data, because the training dataset is a subset of all the data on which the model is applied. For this reason, @novelty compares how different future _and_ current climates are to the bioclimatic data in the training set, and describe the variation of this novelty across different types of range shifts identified in @gainloss. The study area shows higher novelty in future data, but does not show that the novelty is higher in areas that become uncertain in the future. This is an interesting observation, as it suggests that the response of species distribution to novelty changes may be more complex than "higer novelty leads to more uncertainty". Indeed, the highest novelties were observed in areas where the species was epxected to conserve its range.
+
+There are additional techniques to handle covariate shift in conformal prediction #cite(<barber2023conformal>). In addition, #cite(<allen2025insample>, form: "prose") suggest that in-sample calibration (using the training data) is enough to get the coverage guarantees that are required for conformal prediction. Furthermore, #cite(<balinsky2025when>, form: "prose") show that the training dataset can be re-used to calibrate the model, without a loss of performance of CP. These results suggest that CP may be more robust to covariate shift (and therefore, appropriate to use to project under future climates) than expected.
+]
 
 #figure(
   image("figures/covariateshift.png", width: 100%),
-  caption: [Climate novelty measured as Euclidean distance to the closest contemporary analogue (A); note that the scale is square-root transformed, as most areas show low novelty. Distribution of novelty values split by the expected transition in occupancy (B); colors are as in #ref(<gainloss>, supplement: "fig.")B.],
+  caption: [#change[Climate novelty measured as Euclidean distance to the closest contemporary or future analogue (left map); note that the colors and their explanation are given in the bivariate legend. The boxplots on the right correspond to the difference (novelty value) for current conditions (red) and future conditions (blue) for the different types of distribution changes presented in @gainloss.]],
   placement: auto
 ) <novelty>
 
@@ -352,9 +370,7 @@ Although the change in climatic conditions has been measured through climate vel
 
 Transparent communication of uncertainty, meaning that it is both spatially explicit, quantified, and expressed under a risk set by the user, is important: we do not expect a fully trained model to always be certain, as some areas are genuinely more difficult to predict. For example, small organisms are more inherently stochastic #cite(<soininen2013stochastic>); any form of stochastic event will drive species distribution even when there is strong environmental signal #cite(<mohd2016effects>); these stochastic events can even manifest in areas that are close to the species' environmental optimum #cite(<dallas2020weighing>). For these reasons, CP can produce interpretable estimates of uncertainty in species distribution models, and does not require the adoption of additional modeling tools or paradigms as it functions on an already trained model.
 
-#add[depending on goal, can deal with the unsure predictions differently - e.g. include when monitoring for invasive species, exclude when dealing with core areas that need conservation effort]
-
-CP contributes to dispel what #cite(<messeri2024artificial>, form: "prose") called the "illusion of understanding", which is often associated with ML models: it generates an understanding of the uncertainty from observations of a pre-trained model, and expresses this uncertainty both in absolute (is the "presence" event in the #change[prediction set]?) and relative (is the point estimate of the score for presence larger than for absence?) terms. Because this technique is computationally efficient and works on pre-trained models, it opens up the opportunity for more systematic uncertainty quantification in SDMs. CP, in short, can deliver the "maps of ignorance" that #cite(<rocchini2011accounting>, form: "prose") argued for: how difficult is it to make a prediction for the range at a given risk level is, in and of itself, an important information to frame the reliability of the results. Finally, CP can provide guidance on the feedback loop between SDM training and field validation #cite(<johnson2023field>) --- areas where the range is certain are a much lower priority for sampling.
+Because this technique is computationally efficient and works on pre-trained models, it opens up the opportunity for more systematic uncertainty quantification in SDMs. CP, in short, can deliver the "maps of ignorance" that #cite(<rocchini2011accounting>, form: "prose") argued for: how difficult is it to make a prediction for the range at a given risk level is, in and of itself, an important information to frame the reliability of the results. Finally, CP can provide guidance on the feedback loop between SDM training and field validation #cite(<johnson2023field>) --- areas where the range is certain are a much lower priority for sampling. #change[CP contributes to dispel what #cite(<messeri2024artificial>, form: "prose") called the "illusion of understanding", which is often associated with ML models: it generates an understanding of the uncertainty from observations of a pre-trained model, and expresses this uncertainty both in absolute (is the "presence" event in the #change[prediction set]?) and relative (is the point estimate of the score for presence larger than for absence?) terms.]
 
 #pagebreak()
 
@@ -369,6 +385,6 @@ CP contributes to dispel what #cite(<messeri2024artificial>, form: "prose") call
 
 #figure(
   image("figures/partialresponses.png", width: 100%),
-  caption: [Effect of changing the value of the BIO3 variable, on the prediction, as measured by inflated partial responses TK ref. The partial responses have been measured on a random sample of a 1000 draws, and for each draw, the prediction has been classified with the conformal predictor at a risk level $alpha = 0.05$. The proportion of each outcomes for the classification is presented as a function of the variable value. This analysis illustrates how conformal prediction can be used to identify range of predictor variables that are most likely to be associated to uncertain predictions.],
+  caption: [Effect of changing the value of the BIO3 variable, on the prediction, as measured by inflated partial responses #cite(<fiorentino2025improving>). The partial responses have been measured on a random sample of a 1000 draws, and for each draw, the prediction has been classified with the conformal predictor at a risk level $alpha = 0.05$. The proportion of each outcomes for the classification is presented as a function of the variable value. This analysis illustrates how conformal prediction can be used to identify range of predictor variables that are most likely to be associated to uncertain predictions.],
   placement: auto
 ) <partialresponses>

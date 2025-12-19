@@ -19,8 +19,6 @@
 #show "TK": text(weight: "bold", fill: rgb("#e08619"))[TK]
 
 #response(ed: true)[
-  We have ...
-
   The changes are also presented in a track changed manuscript uploaded as a document for reviewers, which indicates #add[additions], #change[changes], and #cut[deletions] to the text following comments made by both reviewers.
 ]
 
